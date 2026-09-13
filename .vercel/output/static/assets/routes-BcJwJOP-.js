@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GameRoot-C6r5kQty.js","assets/index-Cy85S_aJ.js"])))=>i.map(i=>d[i]);
+import{i as e,n as t,r as n,t as r}from"./index-Cy85S_aJ.js";var i=e(n()),a=t();function o(){let[e,t]=(0,i.useState)(null);return(0,i.useEffect)(()=>{r(()=>import(`./GameRoot-C6r5kQty.js`).then(e=>t(()=>e.GameRoot)),__vite__mapDeps([0,1]))},[]),e?(0,a.jsx)(e,{}):(0,a.jsx)(`div`,{className:`fixed inset-0 bg-bg`})}export{o as component};
