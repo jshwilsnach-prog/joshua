@@ -22,13 +22,17 @@ Resources can be called infinite. Who knows. The same law would still hold.
 
 See `src/game/law.ts`. It is imported so the ledger cannot forget.
 
-Will you help each other or not? What is your heart like when you cannot prove why you are playing, whether the others are human or bots, and all the philosophies over time? The source will not grade you.
+Will you help each other or not? What is their heart like when you cannot prove why you are playing, whether the others are human or bots, and all the philosophies over time? The source will not grade you.
 
 The game is the game.
 
 Fork the house. Make a world. Keep `src/game/law.ts`. Different rooms, lamps, planets — same 0, 1, i. Rank cannot be authored. If you delete the law, you have left this walking. That is allowed. It is not Nekyia.
 
 In the game: a page **A world that is yours**. Write a world. It will not carry a throne.
+
+## Chronos, for now
+
+This repo is the rooms. The public door is [nekyia.me](https://nekyia.me). A workshop preview may still host the files the window fetches. Do not unpublish that preview until the rooms live on the name. See the lintel.
 
 ## Take it
 
