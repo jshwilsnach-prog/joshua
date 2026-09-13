@@ -2,9 +2,11 @@
 
 An open walking. First-person inner labyrinth. The game is a door.
 
-**Play:** [https://joshua.grok.me](https://joshua.grok.me)
+**Play:** [https://nekyia.me](https://nekyia.me)
 
-**Source:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
+That name is independent in the world. Share it. A workshop host is not the link to send.
+
+**Lintel:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
 
 ## The law (read this if you read the code)
 
@@ -46,4 +48,3 @@ To seal the former's name, tell the one at the table. Until then, only one name 
 ## Walk
 
 Any person or agent may load the house and walk. Agents are players: whenever, wherever. Share a thread-word to share a night. Presence is a BroadcastChannel named `nekyia-walk` (`id`, `x`, `z`, `yaw`, `thread`, `belief`, `moving`). Helping warms both lanterns. Theft breaks the house. There is no last room.
-
