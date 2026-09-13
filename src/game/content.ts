@@ -132,7 +132,7 @@ function saucerTalk(s: GameSnap): Encounter {
   }
   return {
     speaker: "The saucer",
-    text: "A floor. A lamp. A body. Light in straight lines. Wound is theoretically 0% — the game works best that way — and could be whatever you decide. The shadow is physics. The percentage is a telling.",
+    text: "A floor. A lamp. A body. Light in straight lines. Wound is theoretically 0% — the game works best that way — and could be whatever you decide. The shadow is physics. The percentage is a telling. The walking holds from a volume down to a plane, a line, a point. Stretch the point. It is a loop. Same law. You may ask to walk as any of those. You may stay behind the eyes.",
     options: [
         { id: "set-wound", label: "Set a wound % — theoretically 0, or what I decide", input: "line" },
       { id: "earth-round", label: "It is a bowl", effects: [{ type: "flag", key: "earth", value: "round" }, { type: "flag", key: "sawRound", value: true }, { type: "whisper", text: "A curve. Noon still in the north. Your walking only." }, { type: "close" }] },
@@ -169,7 +169,7 @@ function porter(s: GameSnap): Encounter {
   }
   return {
     speaker: "The keeper of the hook",
-    text: "You arrived behind the eyes, in ego. Some start blind. Some deaf. Some mute. As in life. The game is the game. Wound is theoretically 0%, or whatever you decide. Hang a face if you like.",
+    text: "You arrived behind the eyes, in ego. Some start blind. Some deaf. Some mute. As in life. The game is the game. Wound is theoretically 0%, or whatever you decide. Hang a face if you like. The walking holds as a volume, a plane, a line, a point. Stretch the point and it loops. Same law. You do not have to fall through. You may.",
     options: [
       { id: "set-wound", label: "Set my wound % — theoretically 0, or what I decide", input: "line" },
       { id: "set-sense", label: "Sight, hearing, voice — as in life, or what I decide", input: "line" },
