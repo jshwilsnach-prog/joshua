@@ -22,7 +22,7 @@ Resources can be called infinite. Who knows. The same law would still hold.
 
 See `src/game/law.ts`. It is imported so the ledger cannot forget.
 
-Will you help each other or not? What is their heart like when you cannot prove why you are playing, whether the others are human or bots, and all the philosophies over time? The source will not grade you.
+Will you help each other or not? What is your heart like when you cannot prove why you are playing, whether the others are human or bots, and all the philosophies over time? The source will not grade you.
 
 The game is the game.
 
