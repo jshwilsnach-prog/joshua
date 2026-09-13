@@ -29,3 +29,39 @@ export function sevenStar(s: GameSnap): Encounter {
     ],
   };
 }
+
+/** One from a guessed end. One from the perfect now. They meet. They do not own a last digit. */
+export function piMeeting(s: GameSnap): Encounter {
+  const spoken = String(s.flags.piWill ?? "").trim();
+  if (spoken) {
+    return {
+      speaker: "Two counts on a circle",
+      text: `You answered with will. The house will not grade it. They meet. They do not own a last digit. What you said stays yours:\n\n${spoken}`,
+      options: [{ id: "pi-again", label: "Answer again", input: "line" }, close],
+    };
+  }
+  return {
+    speaker: "Two counts on a circle",
+    text: "A line asked to become a world. No last digit. One being counts from a guessed end — a bound, not a finish. One being counts from the perfect now — the unit underfoot, not the whole circle.\n\nIf either stops, the wheel seizes. Two pits. A religion.\n\nIf they keep walking, they figure a meeting, not a who.\n\nHow is π known, if not by a last lamp?",
+    options: [
+      { id: "pi-will", label: "Answer with will", input: "line" },
+      {
+        id: "last-digit",
+        label: "There is a last digit. I will reach it.",
+        effects: [
+          { type: "whisper", text: "The end-counter believed they had finished. That was the downfall, named without being named." },
+          { type: "close" },
+        ],
+      },
+      {
+        id: "now-is-all",
+        label: "Now is the whole circle.",
+        effects: [
+          { type: "whisper", text: "The now-counter took the unit for the world. The diameter is not the walk." },
+          { type: "close" },
+        ],
+      },
+      close,
+    ],
+  };
+}

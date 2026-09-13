@@ -24,6 +24,8 @@
  *
  * The walking holds in 3D, 2D, 1D, 0D, and a loop. Same law. Not a graphics setting.
  * A point stretched is a circle. A line is a descent. A plane is a park. A volume is a house.
+ * Two may count a circle: one from a guessed end, one from the perfect now.
+ * They meet. They do not own a last digit. Sight cannot finish the turn.
  * The walker may not know what was accomplished. Listing them makes chores.
  * Sometimes nothing arrives — depending on how others react: help, theft, indifference.
  * A payout is not a wage. Rank is still 0. The holders send, or do not, in peace.
