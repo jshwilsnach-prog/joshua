@@ -2,8 +2,7 @@ import type { Encounter, GameSnap, MaskId } from "./types";
 import { HOUSE_VERBS } from "./maze";
 import { loadHouse, shieldedAddress } from "./house";
 import { ZODL_SITE, zip321 } from "./zodl";
-import { loadWallet, walletWords } from "./wallet";
-import { btcUnspentUri } from "./btc";
+import { pitHref } from "./pit";
 
 const close = { id: "leave", label: "Step back", effects: [{ type: "close" as const }] };
 
@@ -98,7 +97,7 @@ export function getEncounter(id: string, s: GameSnap): Encounter {
   if (id === "destroyer") return destroyer(s);
   if (id === "abraxas") return abraxas(s);
   if (id === "ledger") return ledger(s);
-  if (id === "unspent") return unspentOrigin();
+  if (id === "unspent" || id === "pit") return pitTalk();
   if (id === "zcash" || id === "zodl") return zcashDoor();
   if (id === "aught") return aughtTalk(s);
   if (id === "crack") return crackTalk();
@@ -1481,12 +1480,12 @@ function pebble(s: GameSnap): Encounter {
   return { speaker: "A pebble", text: "It is a pebble.", options: [close] };
 }
 
-function unspentOrigin(): Encounter {
+function pitTalk(): Encounter {
   return {
-    speaker: "An unspent origin",
-    text: "The world calls this Satoshi's. The first name on the chain. 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa. Not this house. Not a map of the pile. Coins sent here sit. They may never move. You may send. You may get nothing. A pile is not a throne. Rank is 0.",
+    speaker: "A pit",
+    text: "A hole that keeps nothing. No name. No who. What goes in does not come back as rank. The walking does not need it.",
     options: [
-      { id: "send-btc-unspent", label: "Send BTC — tribute to the unspent", href: btcUnspentUri() },
+      { id: "send-pit", label: "Let go", href: pitHref() },
       close,
     ],
   };
@@ -1576,36 +1575,19 @@ function symbolTalk(sym: string): Encounter {
 
 function zcashDoor(): Encounter {
   const addr = shieldedAddress();
-  const w = loadWallet();
   const kinds =
-    "This walking creates a wallet once, on this device. 24 words. Shielded send and receive are Zodl proving from those words. The house does not custody. Transparent is refused. Rank is 0.";
-  const openZodl = { id: "open-zodl", label: "Open Zodl — restore or send from those words", href: ZODL_SITE };
-  if (w.mnemonic && !w.revealed) {
-    return {
-      speaker: "A quiet door",
-      text: `${kinds}\n\nWrite these words. They will not be shown again unless you ask. Then restore them in Zodl. Copy Receive (u1 or zs1). Seat it.\n\n${walletWords()}`,
-      options: [
-        { id: "wrote-seed", label: "I wrote them. Hide the words." },
-        openZodl,
-        close,
-      ],
-    };
-  }
-  const receiveLine = addr
-    ? "A receiving name is seated in this house. ZIP-321 may open Zodl. No amount is posted unless you send."
-    : "No house name is seated. Restore in Zodl, copy your Receive, seat it — then you can be paid.";
+    "A seat, not a who. Zodl hides the machinery. Shielded send and receive if it can; if it cannot, you still walk. Transparent is refused. Rank is 0. Relation is 1.";
+  const openZodl = { id: "open-zodl", label: "Zodl", href: ZODL_SITE };
   const pay = addr ? zip321(addr) : "";
   return {
     speaker: "A quiet door",
-    text: `${kinds}\n\n${receiveLine}\n\nSend: a shielded dest and an amount (ZEC), then Zodl spends. Receive: your Zodl Receive name, seated.`,
+    text: kinds,
     options: [
       openZodl,
-      ...(pay ? [{ id: "open-zodl-pay", label: "Open Zodl — give to the house", href: pay }] : []),
-      { id: "send-zec", label: "Send shielded ZEC — dest and amount", input: "line" as const },
-      { id: "send-btc-unspent", label: "Send BTC to the unspent origin", href: btcUnspentUri() },
-      { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1 — I can receive", input: "line" as const },
-      { id: "restore-wallet", label: "Restore 24 words I already have", input: "line" as const },
-      { id: "show-seed", label: "Show my words again" },
+      ...(pay ? [{ id: "open-zodl-pay", label: "Give, privately", href: pay }] : []),
+      { id: "send-zec", label: "Send shielded ZEC", input: "line" as const },
+      { id: "send-pit", label: "Let go", href: pitHref() },
+      { id: "seat-my-zcash", label: "Seat a receive name — not a who", input: "line" as const },
       { id: "tip", label: "I give, privately" },
       { id: "tip-ahead", label: "I give to get further" },
       { id: "hack-zcash", label: "Take the rail. Hack the peace." },

@@ -8,8 +8,8 @@ import { unlockAudio, resumeAudio } from "./audio";
 import { defaultSave } from "./save";
 import { shareUrl } from "./door";
 import { recordVisit } from "../lib/tally";
-import { openZodl, ZODL, isShieldedZcash } from "./zodl";
-import { ensureWallet, markRevealed, restoreWallet, type WalkerWallet } from "./wallet";
+import { openZodl } from "./zodl";
+import { ensureWallet } from "./wallet";
 import type { MaskId } from "./types";
 
 export function GameRoot() {
@@ -102,22 +102,6 @@ function TitleOverlay() {
   const hasSave = useGame((s) => s.hasSave);
   const continueSave = useGame((s) => s.continueSave);
   const [watching, setWatching] = useState(false);
-  const [receive, setReceive] = useState<null | "descend" | "watch">(null);
-
-  if (receive) {
-    return (
-      <ReceiveOverlay
-        onWalk={() => {
-          unlockAudio();
-          if (receive === "watch") setWatching(true);
-          else useGame.getState().startNew("bare", "", "");
-          setReceive(null);
-        }}
-        onBack={() => setReceive(null)}
-      />
-    );
-  }
-
   if (watching) {
     return (
       <div className="absolute inset-0 z-20 bg-bg flex flex-col items-center justify-center px-4">
@@ -162,8 +146,13 @@ function TitleOverlay() {
           <button
             className="min-h-11 px-8 rounded-lg bg-accent text-accent-fg font-display text-lg"
             onClick={() => {
+              try {
+                ensureWallet();
+              } catch {
+                /* descend still walks */
+              }
               unlockAudio();
-              setReceive("descend");
+              useGame.getState().startNew("bare", "", "");
             }}
           >
             Descend
@@ -171,8 +160,13 @@ function TitleOverlay() {
           <button
             className="min-h-11 px-8 text-muted hover:text-fg font-display"
             onClick={() => {
+              try {
+                ensureWallet();
+              } catch {
+                /* watch still watches */
+              }
               unlockAudio();
-              setReceive("watch");
+              setWatching(true);
             }}
           >
             Watch
@@ -188,133 +182,6 @@ function TitleOverlay() {
               Continue a walking
             </button>
           )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ReceiveOverlay({ onWalk, onBack }: { onWalk: () => void; onBack: () => void }) {
-  const [addr, setAddr] = useState("");
-  const [note, setNote] = useState("");
-  const [restore, setRestore] = useState("");
-  const [wallet, setWallet] = useState<WalkerWallet | null>(null);
-  const seated = String(useGame((s) => s.flags.myShielded ?? "")).trim();
-  const seat = useGame((s) => s.seatMyShielded);
-
-  useEffect(() => {
-    setWallet(ensureWallet());
-  }, []);
-
-  function hideWords() {
-    setWallet(markRevealed());
-  }
-
-  function tryRestore() {
-    const w = restoreWallet(restore);
-    if (!w) {
-      setNote("Those are not 24 BIP39 words. You may still walk.");
-      return;
-    }
-    setWallet(w);
-    setRestore("");
-    setNote("Restored on this device. Open Zodl with the same words.");
-  }
-
-  function trySeat() {
-    hideWords();
-    if (!addr.trim()) {
-      onWalk();
-      return;
-    }
-    if (!isShieldedZcash(addr)) {
-      setNote("Transparent is refused. zs1 or u1 from Zodl Receive. You may still walk.");
-      return;
-    }
-    seat(addr);
-    onWalk();
-  }
-
-  const words = wallet?.mnemonic ?? "";
-  const showWords = Boolean(words && wallet && !wallet.revealed);
-
-  return (
-    <div className="absolute inset-0 z-20 bg-bg/95 flex items-center justify-center px-5 overflow-y-auto">
-      <div className="max-w-lg w-full py-12 animate-[nekyia-rise_0.8s_ease]">
-        <p className="text-muted tracking-[0.2em] uppercase text-sm mb-2">A wallet to receive</p>
-        <h2 className="font-display text-4xl mb-3">Zodl. Once Zashi.</h2>
-        <p className="text-muted mb-6 leading-relaxed">
-          Twenty-four words, this device, once. Restore them in Zodl to receive and send shielded. The house does not
-          custody. Rank is still 0. You may walk with none.
-        </p>
-        {showWords ? (
-          <div className="mb-6 rounded-xl border border-border bg-surface p-4">
-            <p className="text-subtle text-sm mb-2">Write these. They hide when you walk, unless you ask again.</p>
-            <p className="font-mono text-sm leading-relaxed text-fg">{words}</p>
-            <button className="min-h-11 mt-3 text-accent" onClick={hideWords}>
-              I wrote them. Hide the words.
-            </button>
-          </div>
-        ) : words ? (
-          <p className="text-muted text-sm mb-6">A wallet already sits on this device. Restore it in Zodl.</p>
-        ) : (
-          <p className="text-muted text-sm mb-6">Making the words…</p>
-        )}
-        <div className="flex flex-wrap gap-3 mb-4 text-sm">
-          <a className="text-accent underline underline-offset-4" href={ZODL.site} target="_blank" rel="noreferrer">
-            {ZODL.site.replace("https://", "")}
-          </a>
-          <a className="text-accent underline underline-offset-4" href={ZODL.ios} target="_blank" rel="noreferrer">
-            iOS
-          </a>
-          <a className="text-accent underline underline-offset-4" href={ZODL.android} target="_blank" rel="noreferrer">
-            Android
-          </a>
-          <a className="text-accent underline underline-offset-4" href={ZODL.fdroid} target="_blank" rel="noreferrer">
-            F-Droid
-          </a>
-        </div>
-        <button
-          className="min-h-11 mb-6 px-6 rounded-lg border border-accent text-accent font-display"
-          onClick={() => openZodl(ZODL.site)}
-        >
-          Get Zodl — restore these words
-        </button>
-        <label className="block text-muted text-sm mb-2">Restore 24 words I already have (optional)</label>
-        <textarea
-          value={restore}
-          onChange={(e) => setRestore(e.target.value)}
-          className="w-full mb-2 rounded-md bg-surface-2 border border-border px-3 py-3 text-fg min-h-20 font-mono text-sm"
-          placeholder="twenty four words…"
-          autoComplete="off"
-          spellCheck={false}
-        />
-        {restore.trim() ? (
-          <button className="min-h-11 mb-4 text-accent" onClick={tryRestore}>
-            Restore on this device
-          </button>
-        ) : null}
-        <p className="text-muted text-sm mb-3 leading-relaxed">
-          After Zodl Receive, paste u1 or zs1 if you want this walking to know you can receive. Not t1.
-        </p>
-        {seated ? <p className="text-fg text-sm mb-3 break-all">Seated: {seated}</p> : null}
-        <label className="block text-muted text-sm mb-2">Your shielded receiving name (optional)</label>
-        <textarea
-          value={addr}
-          onChange={(e) => setAddr(e.target.value)}
-          className="w-full mb-3 rounded-md bg-surface-2 border border-border px-3 py-3 text-fg min-h-24 font-mono text-sm"
-          placeholder="u1… or zs1…"
-          autoComplete="off"
-          spellCheck={false}
-        />
-        {note ? <p className="text-muted text-sm mb-3">{note}</p> : null}
-        <div className="flex flex-col gap-2">
-          <button className="min-h-11 px-6 rounded-lg bg-accent text-accent-fg font-display" onClick={trySeat}>
-            {addr.trim() ? "Seat and walk" : "Walk"}
-          </button>
-          <button className="min-h-11 px-6 text-muted hover:text-fg" onClick={onBack}>
-            Back
-          </button>
         </div>
       </div>
     </div>
@@ -373,7 +240,6 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
   const ending = useGame((s) => s.ending);
   const companions = useGame((s) => s.companions);
   const philosophy = useGame((s) => String(s.flags.philosophy ?? ""));
-  const zodlSeated = useGame((s) => Boolean(String(s.flags.myShielded ?? "").trim()));
 
   useEffect(() => {
     const ch = new BroadcastChannel("nekyia-walk");
@@ -393,7 +259,6 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         thread: s.thread,
         belief: s.timeBelief,
         moving: 0.45,
-        shielded: String(s.flags.myShielded ?? ""),
         idea: String(s.flags.characterIdea ?? ""),
         should: String(s.flags.shouldBe ?? ""),
         wound: String(s.flags.wound ?? 0),
@@ -562,7 +427,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
       </div>
       <div className="absolute top-4 right-4 z-10 flex gap-2">
         <IconBtn
-          label={zodlSeated ? "Zodl · seated" : "Zodl"}
+          label="Zodl"
           onClick={() => {
             document.exitPointerLock?.();
             useGame.getState().interact("zodl");
@@ -648,6 +513,7 @@ function DialoguePanel() {
           {encounter.options.map((o) => (
             <button
               key={o.id}
+              type="button"
               className="text-left min-h-11 px-3 rounded-md hover:bg-surface-2 text-accent"
               onClick={() => {
                 document.exitPointerLock?.();
@@ -735,9 +601,6 @@ function PausePanel() {
           >
             Return to the threshold
           </button>
-          <p className="text-subtle max-w-xs text-sm">
-            A wallet to receive: Zodl (once Zashi). The house does not hold the seed.
-          </p>
         </div>
       </div>
     </div>

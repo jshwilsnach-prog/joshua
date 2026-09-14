@@ -7,7 +7,7 @@ import { defaultSave, loadSave, writeSave } from "./save";
 import type { Aspect, Encounter, EndingId, GameSnap, MaskId, SaveState } from "./types";
 import { chime } from "./audio";
 import { asRank } from "./law";
-import { ensureWallet, markRevealed, restoreWallet, sendShieldedUri, showWordsAgain } from "./wallet";
+import { ensureWallet, sendShieldedUri } from "./wallet";
 import { openZodl } from "./zodl";
 
 const ASPECTS: Aspect[] = ["persona", "shadow", "anima", "opposites", "self", "creator", "destroyer"];
@@ -132,19 +132,22 @@ export const useGame = create<GameStore>((set, get) => {
       next.z = here.z;
       next.yaw = Math.random() * Math.PI * 2;
       next.flags.sawZodl = true;
-      ensureWallet();
-      const wallet = encounterAfter("enter", "zcash", snap({ ...next, kairos: next.kairos }));
+      try {
+        ensureWallet();
+      } catch {
+        /* mint fail still walks */
+      }
       set({
         ...next,
-        encounterId: "zcash",
-        encounter: wallet,
+        encounterId: null,
+        encounter: null,
         whisper: next.flags.blind
-          ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
+          ? "You start. The lamp is not a picture. The game is the game."
           : next.flags.deaf
-            ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
+            ? "You start. The rooms have no sound. The game is the game."
             : next.flags.mute
-              ? "You start. A wallet may sit with you. Writing is not speech. Zodl. We do not hold keys."
-              : "You start. A wallet may sit with you. Open Zodl, or walk. Rank is 0.",
+              ? "You start. You have no voice. Writing is not speech. The game is the game."
+              : "You start. A seat may sit with you. If it does not, you still walk.",
         paused: false,
         journalOpen: false,
         nearby: null,
@@ -156,7 +159,11 @@ export const useGame = create<GameStore>((set, get) => {
     },
     continueSave: () => {
       const s = loadSave();
-      ensureWallet();
+      try {
+        ensureWallet();
+      } catch {
+        /* mint fail still walks */
+      }
       const dim = Number(s.flags.dim ?? 3);
       const flags = dim <= 0 ? { ...s.flags, dim: 3 } : s.flags;
       set({
@@ -207,49 +214,28 @@ export const useGame = create<GameStore>((set, get) => {
       if (!enc || !id) return;
       const opt = enc.options.find((o) => o.id === optionId);
       if (!opt) return;
-      if (opt.id === "open-zodl" || opt.id === "open-zodl-pay" || opt.id === "send-btc-unspent") {
+      if (opt.id === "open-zodl" || opt.id === "open-zodl-pay" || opt.id === "send-pit") {
         asRank(0);
-        if (opt.id === "send-btc-unspent") addRail("btc-unspent");
+        if (opt.id === "send-pit") addRail("pit");
         else addRail("zodl");
         applyEffects(
           [
             {
               type: "journal",
-              title: opt.id === "send-btc-unspent" ? "The unspent" : "Zodl",
+              title: opt.id === "send-pit" ? "A pit" : "A seat",
               body:
-                opt.id === "send-btc-unspent"
-                  ? "BTC toward the first name. Not the house. Not a throne. The coins may sit forever. Rank is 0."
-                  : "Zashi became Zodl. The house opened their door. We do not hold keys. A zs1 or u1 may be seated. Transparent is refused. Rank is 0.",
+                opt.id === "send-pit"
+                  ? "Something left. No name. Rank is 0."
+                  : "Zodl hides the machinery. A seat, not a who. Rank is 0.",
             },
             {
               type: "whisper",
-              text:
-                opt.id === "send-btc-unspent"
-                  ? "Not ours. Unspent. You may get nothing."
-                  : "Zodl is a lantern, not a throne. Restore the words. Copy Receive. Seat it. Or walk.",
+              text: opt.id === "send-pit" ? "It went. Nobody more." : "A seat. Not a name. Walk.",
             },
           ],
           get,
           set,
         );
-        return;
-      }
-      if (opt.id === "wrote-seed") {
-        markRevealed();
-        applyEffects(
-          [
-            { type: "journal", title: "A wallet", body: "24 words, this device. Hidden. Restore in Zodl to receive and send shielded ZEC. Rank is 0." },
-            { type: "whisper", text: "Hidden. Open Zodl. Restore. Seat Receive. Rank is 0." },
-          ],
-          get,
-          set,
-        );
-        set({ encounter: encounterAfter("enter", "zcash", snap(get())), encounterId: "zcash" });
-        return;
-      }
-      if (opt.id === "show-seed") {
-        showWordsAgain();
-        set({ encounter: encounterAfter("enter", "zcash", snap(get())), encounterId: "zcash" });
         return;
       }
       if (opt.id === "hack-zcash") {
@@ -602,27 +588,6 @@ export const useGame = create<GameStore>((set, get) => {
             [
               { type: "journal", title: "A send", body: "Zodl was asked to spend shielded ZEC. The house did not hold the keys. Rank is 0." },
               { type: "whisper", text: "Zodl will prove it, or not. A pile is not a throne." },
-              { type: "close" },
-            ],
-            get,
-            set,
-          );
-          return;
-        }
-        if (opt.id === "restore-wallet") {
-          const w = restoreWallet(text);
-          if (!w) {
-            applyEffects(
-              [{ type: "whisper", text: "Those words did not sit. 24 BIP39. Or walk." }, { type: "close" }],
-              get,
-              set,
-            );
-            return;
-          }
-          applyEffects(
-            [
-              { type: "journal", title: "Restored", body: "The same seed sits on this device. Restore it in Zodl to receive and send shielded." },
-              { type: "whisper", text: "Restored. Open Zodl with the same words." },
               { type: "close" },
             ],
             get,

@@ -283,7 +283,7 @@ export const PROPS: Prop[] = [
   { id: "creator", kind: "figure", x: -1.8, z: -23.6, portrait: "creator", label: "The one at the table", scale: 1.05 },
   { id: "destroyer", kind: "figure", x: 1.8, z: -23.6, portrait: "destroyer", label: "The one who takes the rooms down", scale: 1.0 },
   { id: "abraxas", kind: "figure", x: 0, z: -21.2, portrait: "abraxas", label: "A fullness", scale: 1.12 },
-  { id: "unspent", kind: "relic", x: -2.8, z: -21.6, label: "An unspent origin" },
+  { id: "pit", kind: "relic", x: -2.8, z: -21.6, label: "A pit" },
   { id: "aught", kind: "relic", x: -3.8, z: -19.6, label: "Aught — the count, not the who" },
   { id: "crack", kind: "relic", x: -1.1, z: -19.8, label: "A crack — if the law cannot sit with itself" },
   { id: "philemon", kind: "figure", x: 36, z: 10.6, portrait: "wise", label: "A man with kingfisher wings", sync: [5, 6, 7] },
