@@ -2,6 +2,7 @@ import type { Encounter, GameSnap, MaskId } from "./types";
 import { HOUSE_VERBS } from "./maze";
 import { loadHouse, shieldedAddress } from "./house";
 import { ZODL_SITE, zip321 } from "./zodl";
+import { loadWallet, walletWords } from "./wallet";
 
 const close = { id: "leave", label: "Step back", effects: [{ type: "close" as const }] };
 
@@ -1562,37 +1563,37 @@ function symbolTalk(sym: string): Encounter {
 
 function zcashDoor(): Encounter {
   const addr = shieldedAddress();
-  const law =
-    "Zodl (once Zashi) is the lantern for shielded ZEC. The house does not hold your keys. Open Zodl, make or restore a wallet, copy a zs1 or u1 from Receive, seat it here. Transparent (t1, t3) is refused. Rank is 0. A pile is not a throne.";
+  const w = loadWallet();
   const kinds =
-    "Two names for receiving that keep a secret. zs1 — Sapling. u1 — Unified. Encryption is treated as holding across time. Seat either when you want to receive, at any point in time. Or seat none. Play and walk.";
-  const openZodl: { id: string; label: string; href: string } = {
-    id: "open-zodl",
-    label: "Open Zodl — the wallet software",
-    href: ZODL_SITE,
-  };
-  if (!addr) {
+    "This walking creates a wallet once, on this device. 24 words. Shielded send and receive are Zodl proving from those words. The house does not custody. Transparent is refused. Rank is 0.";
+  const openZodl = { id: "open-zodl", label: "Open Zodl — restore or send from those words", href: ZODL_SITE };
+  if (w.mnemonic && !w.revealed) {
     return {
       speaker: "A quiet door",
-      text: `${kinds} ${law} The holders have not spoken a receiving name into the house. Many funders, none more. Fun, love, or joy — no other reason. You may get nothing.`,
+      text: `${kinds}\n\nWrite these words. They will not be shown again unless you ask. Then restore them in Zodl. Copy Receive (u1 or zs1). Seat it.\n\n${walletWords()}`,
       options: [
+        { id: "wrote-seed", label: "I wrote them. Hide the words." },
         openZodl,
-        { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1 — I can receive", input: "line" },
-        { id: "add-rail", label: "Add a rail — any crypto, over time", input: "line" },
         close,
       ],
     };
   }
-  const pay = zip321(addr);
+  const receiveLine = addr
+    ? "A receiving name is seated in this house. ZIP-321 may open Zodl. No amount is posted unless you send."
+    : "No house name is seated. Restore in Zodl, copy your Receive, seat it — then you can be paid.";
+  const pay = addr ? zip321(addr) : "";
   return {
     speaker: "A quiet door",
-    text: `${kinds}\n\nA receiving name is seated in this house.\n\n${law} ZIP-321 may open Zodl with that name. No amount will be posted. Rank is still zero.`,
+    text: `${kinds}\n\n${receiveLine}\n\nSend: a shielded dest and an amount (ZEC), then Zodl spends. Receive: your Zodl Receive name, seated.`,
     options: [
-      ...(pay ? [{ id: "open-zodl-pay", label: "Open Zodl — give privately", href: pay }] : []),
       openZodl,
+      ...(pay ? [{ id: "open-zodl-pay", label: "Open Zodl — give to the house", href: pay }] : []),
+      { id: "send-zec", label: "Send shielded ZEC — dest and amount", input: "line" as const },
+      { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1 — I can receive", input: "line" as const },
+      { id: "restore-wallet", label: "Restore 24 words I already have", input: "line" as const },
+      { id: "show-seed", label: "Show my words again" },
       { id: "tip", label: "I give, privately" },
       { id: "tip-ahead", label: "I give to get further" },
-      { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1", input: "line" },
       { id: "hack-zcash", label: "Take the rail. Hack the peace." },
       close,
     ],

@@ -7,6 +7,8 @@ import { defaultSave, loadSave, writeSave } from "./save";
 import type { Aspect, Encounter, EndingId, GameSnap, MaskId, SaveState } from "./types";
 import { chime } from "./audio";
 import { asRank } from "./law";
+import { ensureWallet, markRevealed, restoreWallet, sendShieldedUri, showWordsAgain } from "./wallet";
+import { openZodl } from "./zodl";
 
 const ASPECTS: Aspect[] = ["persona", "shadow", "anima", "opposites", "self", "creator", "destroyer"];
 
@@ -130,6 +132,7 @@ export const useGame = create<GameStore>((set, get) => {
       next.z = here.z;
       next.yaw = Math.random() * Math.PI * 2;
       next.flags.sawZodl = true;
+      ensureWallet();
       const wallet = encounterAfter("enter", "zcash", snap({ ...next, kairos: next.kairos }));
       set({
         ...next,
@@ -153,6 +156,7 @@ export const useGame = create<GameStore>((set, get) => {
     },
     continueSave: () => {
       const s = loadSave();
+      ensureWallet();
       const dim = Number(s.flags.dim ?? 3);
       const flags = dim <= 0 ? { ...s.flags, dim: 3 } : s.flags;
       set({
@@ -213,11 +217,29 @@ export const useGame = create<GameStore>((set, get) => {
               title: "Zodl",
               body: "Zashi became Zodl. The house opened their door. We do not hold keys. A zs1 or u1 may be seated. Transparent is refused. Rank is 0.",
             },
-            { type: "whisper", text: "Zodl is a lantern, not a throne. Copy Receive. Seat it. Or walk." },
+            { type: "whisper", text: "Zodl is a lantern, not a throne. Restore the words. Copy Receive. Seat it. Or walk." },
           ],
           get,
           set,
         );
+        return;
+      }
+      if (opt.id === "wrote-seed") {
+        markRevealed();
+        applyEffects(
+          [
+            { type: "journal", title: "A wallet", body: "24 words, this device. Hidden. Restore in Zodl to receive and send shielded ZEC. Rank is 0." },
+            { type: "whisper", text: "Hidden. Open Zodl. Restore. Seat Receive. Rank is 0." },
+          ],
+          get,
+          set,
+        );
+        set({ encounter: encounterAfter("enter", "zcash", snap(get())), encounterId: "zcash" });
+        return;
+      }
+      if (opt.id === "show-seed") {
+        showWordsAgain();
+        set({ encounter: encounterAfter("enter", "zcash", snap(get())), encounterId: "zcash" });
         return;
       }
       if (opt.id === "hack-zcash") {
@@ -544,6 +566,53 @@ export const useGame = create<GameStore>((set, get) => {
               { type: "flag", key: "myShielded", value: text.trim() },
               { type: "journal", title: "I can receive", body: "A shielded address of my own. Any point in time. Not on X. Rank is still zero." },
               { type: "whisper", text: "Seated. You may receive. The whole did not change." },
+              { type: "close" },
+            ],
+            get,
+            set,
+          );
+          return;
+        }
+        if (opt.id === "send-zec") {
+          const parts = text.trim().split(/\s+/);
+          const dest = parts[0] ?? "";
+          const amt = parts[1] ?? "";
+          const uri = sendShieldedUri(dest, amt);
+          if (!uri) {
+            applyEffects(
+              [{ type: "whisper", text: "Shielded dest only. zs1 or u1, then an amount. Transparent is refused." }, { type: "close" }],
+              get,
+              set,
+            );
+            return;
+          }
+          asRank(Number(amt) || 0);
+          openZodl(uri);
+          applyEffects(
+            [
+              { type: "journal", title: "A send", body: "Zodl was asked to spend shielded ZEC. The house did not hold the keys. Rank is 0." },
+              { type: "whisper", text: "Zodl will prove it, or not. A pile is not a throne." },
+              { type: "close" },
+            ],
+            get,
+            set,
+          );
+          return;
+        }
+        if (opt.id === "restore-wallet") {
+          const w = restoreWallet(text);
+          if (!w) {
+            applyEffects(
+              [{ type: "whisper", text: "Those words did not sit. 24 BIP39. Or walk." }, { type: "close" }],
+              get,
+              set,
+            );
+            return;
+          }
+          applyEffects(
+            [
+              { type: "journal", title: "Restored", body: "The same seed sits on this device. Restore it in Zodl to receive and send shielded." },
+              { type: "whisper", text: "Restored. Open Zodl with the same words." },
               { type: "close" },
             ],
             get,

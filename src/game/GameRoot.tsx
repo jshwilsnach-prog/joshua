@@ -481,7 +481,7 @@ function DialoguePanel() {
             value={line}
             onChange={(e) => setLine(e.target.value)}
             className="w-full mb-3 rounded-md bg-surface-2 border border-border px-3 py-2 text-fg min-h-20"
-            placeholder="A thought that is not from these rooms"
+            placeholder={inputOpt.id === "send-zec" ? "u1… or zs1…  then amount in ZEC" : "A thought that is not from these rooms"}
           />
         )}
         {inputOpt?.input === "work" && (

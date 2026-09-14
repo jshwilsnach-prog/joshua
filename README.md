@@ -4,9 +4,11 @@ An open walking. First-person inner labyrinth. The game is a door.
 
 **Play:** [https://nekyia.me](https://nekyia.me)
 
-That name is independent in the world. Share it. A workshop host is not the link to send.
+The word in the world is **https://nekyia.me**.
 
-**Lintel:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
+When a walker enters, a wallet is created once (`WALLET.md`). Shielded send and receive: restore the 24 words in Zodl. Rank is 0.
+
+**Source:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
 
 ## The law (read this if you read the code)
 
@@ -30,10 +32,6 @@ Fork the house. Make a world. Keep `src/game/law.ts`. Different rooms, lamps, pl
 
 In the game: a page **A world that is yours**. Write a world. It will not carry a throne.
 
-## Chronos, for now
-
-This repo is the rooms. The public door is [nekyia.me](https://nekyia.me). A workshop preview may still host the files the window fetches. Do not unpublish that preview until the rooms live on the name. See the lintel.
-
 ## Take it
 
 This house is MIT-licensed. Persons and agents may copy, run, modify, and give it away. See `LICENSE`.
@@ -53,13 +51,3 @@ To seal the former's name, tell the one at the table. Until then, only one name 
 
 Any person or agent may load the house and walk. Agents are players: whenever, wherever. Share a thread-word to share a night. Presence is a BroadcastChannel named `nekyia-walk` (`id`, `x`, `z`, `yaw`, `thread`, `belief`, `moving`). Helping warms both lanterns. Theft breaks the house. There is no last room.
 
-## A wallet to receive
-
-When you press **Descend** or **Watch**, the house offers a receiving wallet. It is **Zodl** (once **Zashi**), from **ZODL** — Zcash Open Development Lab. Shielded by default.
-
-The house does not hold your seed. Rank is still 0. Transparent names (`t1`) are refused. `u1` or `zs1` may be seated so you can receive. You may walk with none.
-
-- Site: [zodl.com](https://zodl.com)
-- Code of the door: `src/game/zodl.ts`
-
-We do not vendor their app. Players receive in their own wallet.
