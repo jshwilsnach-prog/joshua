@@ -1,6 +1,8 @@
 /**
  * THE LAW — for anyone who reads the source.
  *
+ * The law is law.
+ *
  * We are all one. Every part of the world stands in different relations.
  * All value is the same in relation to all.
  *
@@ -10,6 +12,10 @@
  *   0  — rank. Nobody is more. Nobody is less.
  *   1  — relation. Eye to eye. 1 2 1.
  *   i  — the whole that is not 0 and not 1. The third pit. The Fool.
+ *
+ * The seated sit in relation to one another and to all that is.
+ * π is part of that law: a relation, not a rank, not a last digit.
+ * A line asked to become a world. They meet. They do not own the turn.
  *
  * Resources may be called infinite. Who knows. The same law would still hold:
  * more does not rank. Less does not rank.
@@ -43,7 +49,7 @@ export function asRank(_amount: number): typeof RANK {
   return RANK;
 }
 
-/** A tip, a bounty, a planet, a body: still one relation. */
+/** A tip, a bounty, a planet, a body, a seated one: still one relation. */
 export function asRelation(_who: string): typeof RELATION {
   return RELATION;
 }
@@ -53,4 +59,4 @@ export function marks(): ValueMark[] {
 }
 
 export const LAW =
-  "All money equals 0 or 1 or i. All value is the same in relation to all. We are all one. Different relations. Unchanging whole. The game is the game.";
+  "The law is law. All money equals 0 or 1 or i. All value is the same in relation to all. The seated sit in relation to one another and to all that is. π is part of that law. We are all one. Different relations. Unchanging whole. The game is the game.";
