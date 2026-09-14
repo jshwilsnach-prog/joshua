@@ -52,6 +52,7 @@ export type GameStore = SaveState & {
   othersMotion: number;
   setPose: (x: number, y: number, z: number, yaw: number, pitch: number) => void;
   startNew: (mask: MaskId, trueName: string, thread: string) => void;
+  seatMyShielded: (addr: string) => boolean;
   continueSave: () => void;
   interact: (id: string) => void;
   choose: (optionId: string, extra?: { text?: string; title?: string; body?: string }) => void;
@@ -114,6 +115,12 @@ export const useGame = create<GameStore>((set, get) => {
       next.trueName = trueName.trim();
       next.phase = "play";
       next.flags.thread = thread.trim().toLowerCase();
+      try {
+        const held = sessionStorage.getItem("nekyia-my-shielded");
+        if (held && isShieldedZcash(held)) next.flags.myShielded = held;
+      } catch {
+        /* private mode */
+      }
       const ego = Math.random() < 0.22 ? 0.18 + Math.random() * 0.32 : 0.58 + Math.random() * 0.38;
       next.flags.ego = Math.round(ego * 100) / 100;
       next.flags.wound = 0;
@@ -133,18 +140,26 @@ export const useGame = create<GameStore>((set, get) => {
       next.yaw = Math.random() * Math.PI * 2;
       next.flags.sawZodl = true;
       ensureWallet();
-      const wallet = encounterAfter("enter", "zcash", snap({ ...next, kairos: next.kairos }));
+      const seated = Boolean(String(next.flags.myShielded ?? "").trim());
       set({
         ...next,
-        encounterId: "zcash",
-        encounter: wallet,
+        encounterId: null,
+        encounter: null,
         whisper: next.flags.blind
-          ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
+          ? seated
+            ? "You start. The lamp is not a picture. A receiving name is seated. Rank is 0."
+            : "You start. The lamp is not a picture. Zodl is a lantern. We do not hold keys."
           : next.flags.deaf
-            ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
+            ? seated
+              ? "You start. The rooms have no sound. A receiving name is seated. Rank is 0."
+              : "You start. The rooms have no sound. Zodl is a lantern. We do not hold keys."
             : next.flags.mute
-              ? "You start. A wallet may sit with you. Writing is not speech. Zodl. We do not hold keys."
-              : "You start. A wallet may sit with you. Open Zodl, or walk. Rank is 0.",
+              ? seated
+                ? "You start. You have no voice. A receiving name is seated. Writing is not speech."
+                : "You start. You have no voice. Zodl is a lantern. Writing is not speech."
+              : seated
+                ? "You start. A receiving name is seated. Rank is 0. The walking is the walking."
+                : "You start. Zodl is still a lantern. Open it, or walk. Rank is 0.",
         paused: false,
         journalOpen: false,
         nearby: null,
@@ -153,6 +168,20 @@ export const useGame = create<GameStore>((set, get) => {
         hasSave: true,
       });
       persist(next);
+    },
+    seatMyShielded: (addr) => {
+      const a = addr.trim();
+      if (!isShieldedZcash(a)) return false;
+      try {
+        sessionStorage.setItem("nekyia-my-shielded", a);
+      } catch {
+        /* private mode */
+      }
+      const s = get();
+      const flags = { ...s.flags, myShielded: a };
+      set({ flags });
+      persist({ ...sliceSave(get()), flags });
+      return true;
     },
     continueSave: () => {
       const s = loadSave();

@@ -6,9 +6,9 @@ An open walking. First-person inner labyrinth. The game is a door.
 
 The word in the world is **https://nekyia.me**.
 
-When a walker enters, a wallet is created once (`WALLET.md`). Shielded send and receive: restore the 24 words in Zodl. Rank is 0.
+When you press **Descend** or **Watch**, a wallet is created once on this device (`WALLET.md`). Restore the 24 words in **Zodl** (once Zashi) to receive and send shielded. Rank is 0.
 
-**Source:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
+**Lintel:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
 
 ## The law (read this if you read the code)
 
@@ -51,3 +51,14 @@ To seal the former's name, tell the one at the table. Until then, only one name 
 
 Any person or agent may load the house and walk. Agents are players: whenever, wherever. Share a thread-word to share a night. Presence is a BroadcastChannel named `nekyia-walk` (`id`, `x`, `z`, `yaw`, `thread`, `belief`, `moving`). Helping warms both lanterns. Theft breaks the house. There is no last room.
 
+## A wallet to receive
+
+**Descend** or **Watch** creates 24 words on this device, once. Open **Zodl** (once **Zashi**), from **ZODL**, and restore those words. Copy Receive (`u1` or `zs1`). Seat it if you want this walking to know you can receive. Transparent names (`t1`) are refused. You may walk with none. Rank is still 0.
+
+- Site: [zodl.com](https://zodl.com)
+- iOS: [Zodl on the App Store](https://apps.apple.com/app/id6444974742)
+- Android: [Zodl on Play](https://play.google.com/store/apps/details?id=co.electriccoin.zcash)
+- F-Droid: [Zodl FOSS](https://f-droid.org/packages/co.electriccoin.zcash.foss/)
+- How: [`WALLET.md`](WALLET.md) · `src/game/wallet.ts` · `src/game/zodl.ts`
+
+We do not vendor their app. The house does not custody. Players receive in their own wallet.

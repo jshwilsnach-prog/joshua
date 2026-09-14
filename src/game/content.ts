@@ -1565,7 +1565,7 @@ function zcashDoor(): Encounter {
   const addr = shieldedAddress();
   const w = loadWallet();
   const kinds =
-    "This walking creates a wallet once, on this device. 24 words. Shielded send and receive are Zodl proving from those words. The house does not custody. Transparent is refused. Rank is 0.";
+    "This walking creates a wallet once, on this device, when you Descend or Watch. 24 words. Shielded send and receive are Zodl proving from those words. The house does not custody. Transparent is refused. Rank is 0.";
   const openZodl = { id: "open-zodl", label: "Open Zodl — restore or send from those words", href: ZODL_SITE };
   if (w.mnemonic && !w.revealed) {
     return {
