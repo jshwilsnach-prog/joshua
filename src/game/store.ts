@@ -52,7 +52,6 @@ export type GameStore = SaveState & {
   othersMotion: number;
   setPose: (x: number, y: number, z: number, yaw: number, pitch: number) => void;
   startNew: (mask: MaskId, trueName: string, thread: string) => void;
-  seatMyShielded: (addr: string) => boolean;
   continueSave: () => void;
   interact: (id: string) => void;
   choose: (optionId: string, extra?: { text?: string; title?: string; body?: string }) => void;
@@ -115,12 +114,6 @@ export const useGame = create<GameStore>((set, get) => {
       next.trueName = trueName.trim();
       next.phase = "play";
       next.flags.thread = thread.trim().toLowerCase();
-      try {
-        const held = sessionStorage.getItem("nekyia-my-shielded");
-        if (held && isShieldedZcash(held)) next.flags.myShielded = held;
-      } catch {
-        /* private mode */
-      }
       const ego = Math.random() < 0.22 ? 0.18 + Math.random() * 0.32 : 0.58 + Math.random() * 0.38;
       next.flags.ego = Math.round(ego * 100) / 100;
       next.flags.wound = 0;
@@ -140,26 +133,18 @@ export const useGame = create<GameStore>((set, get) => {
       next.yaw = Math.random() * Math.PI * 2;
       next.flags.sawZodl = true;
       ensureWallet();
-      const seated = Boolean(String(next.flags.myShielded ?? "").trim());
+      const wallet = encounterAfter("enter", "zcash", snap({ ...next, kairos: next.kairos }));
       set({
         ...next,
-        encounterId: null,
-        encounter: null,
+        encounterId: "zcash",
+        encounter: wallet,
         whisper: next.flags.blind
-          ? seated
-            ? "You start. The lamp is not a picture. A receiving name is seated. Rank is 0."
-            : "You start. The lamp is not a picture. Zodl is a lantern. We do not hold keys."
+          ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
           : next.flags.deaf
-            ? seated
-              ? "You start. The rooms have no sound. A receiving name is seated. Rank is 0."
-              : "You start. The rooms have no sound. Zodl is a lantern. We do not hold keys."
+            ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
             : next.flags.mute
-              ? seated
-                ? "You start. You have no voice. A receiving name is seated. Writing is not speech."
-                : "You start. You have no voice. Zodl is a lantern. Writing is not speech."
-              : seated
-                ? "You start. A receiving name is seated. Rank is 0. The walking is the walking."
-                : "You start. Zodl is still a lantern. Open it, or walk. Rank is 0.",
+              ? "You start. A wallet may sit with you. Writing is not speech. Zodl. We do not hold keys."
+              : "You start. A wallet may sit with you. Open Zodl, or walk. Rank is 0.",
         paused: false,
         journalOpen: false,
         nearby: null,
@@ -168,20 +153,6 @@ export const useGame = create<GameStore>((set, get) => {
         hasSave: true,
       });
       persist(next);
-    },
-    seatMyShielded: (addr) => {
-      const a = addr.trim();
-      if (!isShieldedZcash(a)) return false;
-      try {
-        sessionStorage.setItem("nekyia-my-shielded", a);
-      } catch {
-        /* private mode */
-      }
-      const s = get();
-      const flags = { ...s.flags, myShielded: a };
-      set({ flags });
-      persist({ ...sliceSave(get()), flags });
-      return true;
     },
     continueSave: () => {
       const s = loadSave();
@@ -236,17 +207,27 @@ export const useGame = create<GameStore>((set, get) => {
       if (!enc || !id) return;
       const opt = enc.options.find((o) => o.id === optionId);
       if (!opt) return;
-      if (opt.id === "open-zodl" || opt.id === "open-zodl-pay") {
+      if (opt.id === "open-zodl" || opt.id === "open-zodl-pay" || opt.id === "send-btc-unspent") {
         asRank(0);
-        addRail("zodl");
+        if (opt.id === "send-btc-unspent") addRail("btc-unspent");
+        else addRail("zodl");
         applyEffects(
           [
             {
               type: "journal",
-              title: "Zodl",
-              body: "Zashi became Zodl. The house opened their door. We do not hold keys. A zs1 or u1 may be seated. Transparent is refused. Rank is 0.",
+              title: opt.id === "send-btc-unspent" ? "The unspent" : "Zodl",
+              body:
+                opt.id === "send-btc-unspent"
+                  ? "BTC toward the first name. Not the house. Not a throne. The coins may sit forever. Rank is 0."
+                  : "Zashi became Zodl. The house opened their door. We do not hold keys. A zs1 or u1 may be seated. Transparent is refused. Rank is 0.",
             },
-            { type: "whisper", text: "Zodl is a lantern, not a throne. Restore the words. Copy Receive. Seat it. Or walk." },
+            {
+              type: "whisper",
+              text:
+                opt.id === "send-btc-unspent"
+                  ? "Not ours. Unspent. You may get nothing."
+                  : "Zodl is a lantern, not a throne. Restore the words. Copy Receive. Seat it. Or walk.",
+            },
           ],
           get,
           set,

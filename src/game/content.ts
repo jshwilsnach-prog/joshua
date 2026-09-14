@@ -3,6 +3,7 @@ import { HOUSE_VERBS } from "./maze";
 import { loadHouse, shieldedAddress } from "./house";
 import { ZODL_SITE, zip321 } from "./zodl";
 import { loadWallet, walletWords } from "./wallet";
+import { btcUnspentUri } from "./btc";
 
 const close = { id: "leave", label: "Step back", effects: [{ type: "close" as const }] };
 
@@ -97,6 +98,7 @@ export function getEncounter(id: string, s: GameSnap): Encounter {
   if (id === "destroyer") return destroyer(s);
   if (id === "abraxas") return abraxas(s);
   if (id === "ledger") return ledger(s);
+  if (id === "unspent") return unspentOrigin();
   if (id === "zcash" || id === "zodl") return zcashDoor();
   if (id === "aught") return aughtTalk(s);
   if (id === "crack") return crackTalk();
@@ -1479,6 +1481,17 @@ function pebble(s: GameSnap): Encounter {
   return { speaker: "A pebble", text: "It is a pebble.", options: [close] };
 }
 
+function unspentOrigin(): Encounter {
+  return {
+    speaker: "An unspent origin",
+    text: "The world calls this Satoshi's. The first name on the chain. 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa. Not this house. Not a map of the pile. Coins sent here sit. They may never move. You may send. You may get nothing. A pile is not a throne. Rank is 0.",
+    options: [
+      { id: "send-btc-unspent", label: "Send BTC — tribute to the unspent", href: btcUnspentUri() },
+      close,
+    ],
+  };
+}
+
 function plaque(): Encounter {
   return {
     speaker: "The lintel",
@@ -1565,7 +1578,7 @@ function zcashDoor(): Encounter {
   const addr = shieldedAddress();
   const w = loadWallet();
   const kinds =
-    "This walking creates a wallet once, on this device, when you Descend or Watch. 24 words. Shielded send and receive are Zodl proving from those words. The house does not custody. Transparent is refused. Rank is 0.";
+    "This walking creates a wallet once, on this device. 24 words. Shielded send and receive are Zodl proving from those words. The house does not custody. Transparent is refused. Rank is 0.";
   const openZodl = { id: "open-zodl", label: "Open Zodl — restore or send from those words", href: ZODL_SITE };
   if (w.mnemonic && !w.revealed) {
     return {
@@ -1589,6 +1602,7 @@ function zcashDoor(): Encounter {
       openZodl,
       ...(pay ? [{ id: "open-zodl-pay", label: "Open Zodl — give to the house", href: pay }] : []),
       { id: "send-zec", label: "Send shielded ZEC — dest and amount", input: "line" as const },
+      { id: "send-btc-unspent", label: "Send BTC to the unspent origin", href: btcUnspentUri() },
       { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1 — I can receive", input: "line" as const },
       { id: "restore-wallet", label: "Restore 24 words I already have", input: "line" as const },
       { id: "show-seed", label: "Show my words again" },
