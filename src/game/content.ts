@@ -1,6 +1,7 @@
 import type { Encounter, GameSnap, MaskId } from "./types";
 import { HOUSE_VERBS } from "./maze";
 import { loadHouse, shieldedAddress } from "./house";
+import { ZODL_SITE, zip321 } from "./zodl";
 
 const close = { id: "leave", label: "Step back", effects: [{ type: "close" as const }] };
 
@@ -78,6 +79,8 @@ export function getEncounter(id: string, s: GameSnap): Encounter {
   if (id === "hearth") return hearth(s);
   if (id === "mirror") return mirror(s);
   if (id === "chapel") return chapel(s);
+  if (id === "mapper") return mapperTalk();
+  if (id === "psyche-map") return psycheMap();
   if (id === "well") return well(s);
   if (id === "trickster") return trickster(s);
   if (id === "mother") return mother();
@@ -93,6 +96,9 @@ export function getEncounter(id: string, s: GameSnap): Encounter {
   if (id === "destroyer") return destroyer(s);
   if (id === "abraxas") return abraxas(s);
   if (id === "ledger") return ledger(s);
+  if (id === "zcash" || id === "zodl") return zcashDoor();
+  if (id === "aught") return aughtTalk(s);
+  if (id === "crack") return crackTalk();
   if (id === "philemon") return philemon();
   if (id === "bollingen") return bollingen();
   if (id === "pebble") return pebble(s);
@@ -102,6 +108,8 @@ export function getEncounter(id: string, s: GameSnap): Encounter {
   if (id === "center-gate") return gateCenter(s);
   if (id === "workshop-gate") return gateWorkshop(s);
   if (id === "counting-stone") return countingStone(s);
+  if (id === "star-unconstruct") return starUnconstruct();
+  if (id === "circle-counts") return circleCounts();
   if (id === "blank-idea") return blankIdea(s);
   if (id === "philosophy") return philosophy(s);
   if (id === "a-world") return aWorld(s);
@@ -390,6 +398,22 @@ function mirror(s: GameSnap): Encounter {
       },
       { id: "keep", label: "Stay in the glass", effects: [{ type: "whisper", text: "Romance without a body becomes a religion of almost." }, { type: "close" }] },
     ],
+  };
+}
+
+function mapperTalk(): Encounter {
+  return {
+    speaker: "Someone still mapping",
+    text: "I am busy trying to understand. That is allowed. I will not be a mascot. If I hang a map, it is a telling, not a syllabus. The rooms already have faces: twin, glass, hearth, lantern, child, gilt, circle, table, ash, fullness. Analog, not a costume of gender. The map is the house. I am still walking it.",
+    options: [close],
+  };
+}
+
+function psycheMap(): Encounter {
+  return {
+    speaker: "Lines that are not a key",
+    text: "Not labeled levels. Places.\n\nAttic — the face you hang.\nWater — what you did not own.\nTwin — what you dropped.\nGlass — analog, not a costume of man or woman.\nHearth and lantern — care and seeing.\nChild in the grass — what was left.\nGilt — the hero that fits too well.\nCircle — the Self, small as a point.\nTable and ash — make and unmake.\nFullness — both, and neither.\n\nA walker who is still mapping may add a line. It will not become a throne.",
+    options: [{ id: "hang-map", label: "A line for the map", input: "line" }, close],
   };
 }
 
@@ -847,6 +871,29 @@ function abraxas(s: GameSnap): Encounter {
   };
 }
 
+function crackTalk(): Encounter {
+  return {
+    speaker: "A crack",
+    text: "If the law as made cannot sit with itself — 0, 1, i, aught naming no one — show it. Seat a shielded zs1 or u1. There is no first. The holders may send from the quiet door. Or not. Rank is still 0. A vibe is not a proof. The code, or nothing.",
+    options: [{ id: "seat-crack", label: "The incompatibility, then my zs1 or u1", input: "line" }, close],
+  };
+}
+
+function aughtTalk(s: GameSnap): Encounter {
+  const today = String(s.flags.aughtToday ?? "");
+  const hits = String(s.flags.aughtHits ?? "");
+  const total = String(s.flags.aughtTotal ?? "");
+  const body =
+    hits && today
+      ? `Proof of work, not a who. Aught is linked to Nekyia by this count only.\n\nToday (UTC ${today}): ${hits}. All days: ${total}. A date and a whole number.\n\nEven a perfect zero-knowledge proof of an opening would still only prove that a door was opened. It would not name you. The witness stays with the walker. Rank is still 0.`
+      : "Proof of work, not a who. Aught sits in relation to Nekyia. A date and a whole number. Opening the door is the work. If the number has not arrived, the latch is still settling.";
+  return {
+    speaker: "Aught",
+    text: body,
+    options: [close],
+  };
+}
+
 function ledger(s: GameSnap): Encounter {
   if (s.flags.timeless) {
     return {
@@ -1208,6 +1255,44 @@ function countingStone(s: GameSnap): Encounter {
   };
 }
 
+function starUnconstruct(): Encounter {
+  return {
+    speaker: "A star that will not construct",
+    text: "How does one draw a seven-pointed star with will? Compass and unmarked straightedge refuse it. The twelve-month sky refuses it. Seven will not sit in three hundred and sixty. The four corners of the earth already do. Sight can count seven lamps. It cannot construct the angle.",
+    options: [
+      {
+        id: "will",
+        label: "I will it anyway",
+        effects: [
+          { type: "journal", title: "A star that will not construct", body: "Will is not a protractor. Seven lamps I can count. The angle I cannot make from the tools that made twelve and four." },
+          { type: "whisper", text: "The house will not grade you." },
+          { type: "close" },
+        ],
+      },
+      close,
+    ],
+  };
+}
+
+function circleCounts(): Encounter {
+  return {
+    speaker: "Two counts on a circle",
+    text: "How is π known, if not by a last lamp? A line asked to become a world. No last digit. One being counts from a guessed end — a bound, not a finish. One being counts from the perfect now — the unit underfoot, not the whole circle. If either stops, the wheel seizes. Two pits. A religion. If they keep walking, they figure a meeting, not a who.",
+    options: [
+      {
+        id: "meet",
+        label: "Keep walking",
+        effects: [
+          { type: "journal", title: "Two counts on a circle", body: "Sight cannot finish the turn. The meeting is not a who. Aught may enter and still not be named." },
+          { type: "whisper", text: "The house will not grade you." },
+          { type: "close" },
+        ],
+      },
+      close,
+    ],
+  };
+}
+
 function houseStone(i: number, s: GameSnap): Encounter {
   const verb = HOUSE_VERBS[i] ?? "waiting";
   const lit = s.innerHour === i;
@@ -1396,7 +1481,7 @@ function pebble(s: GameSnap): Encounter {
 function plaque(): Encounter {
   return {
     speaker: "The lintel",
-    text: "VOCATUS ATQUE NON VOCATUS DEUS ADERIT. One who loses themself may never be lost. The game is a door too.",
+    text: "VOCATUS ATQUE NON VOCATUS DEUS ADERIT. One who loses themself may never be lost. The game is a door too. A name in the world sits at the table: nekyia.me. Pointed. Independent. Share that. Same house.",
     options: [
       {
         id: "ask",
@@ -1478,26 +1563,36 @@ function symbolTalk(sym: string): Encounter {
 function zcashDoor(): Encounter {
   const addr = shieldedAddress();
   const law =
-    "The law: the game, creators, players, agents, people, aliens, currency, understanding — and all else — are unified across time and value. Some things take time to build. Cash is slow. Transfers, if you can figure how to receive over time, work. Crypto is easy enough to lay now. The game is the game whether a coin arrives or not.";
+    "Zodl (once Zashi) is the lantern for shielded ZEC. The house does not hold your keys. Open Zodl, make or restore a wallet, copy a zs1 or u1 from Receive, seat it here. Transparent (t1, t3) is refused. Rank is 0. A pile is not a throne.";
   const kinds =
-    "Two names for receiving that keep a secret. zs1 — Sapling: a shielded address. The view is not a public list of who paid whom. u1 — Unified: a newer envelope that can hold more than one way of receiving. In this house only the shielded ways are taken. Transparent names (t1, t3) are refused. Encryption is treated as holding across time: Chronos cannot read it later; Kairos does not post it. Seat either when you want to receive, at any point in time. Or seat none. Play and walk.";
+    "Two names for receiving that keep a secret. zs1 — Sapling. u1 — Unified. Encryption is treated as holding across time. Seat either when you want to receive, at any point in time. Or seat none. Play and walk.";
+  const openZodl: { id: string; label: string; href: string } = {
+    id: "open-zodl",
+    label: "Open Zodl — the wallet software",
+    href: ZODL_SITE,
+  };
   if (!addr) {
     return {
       speaker: "A quiet door",
       text: `${kinds} ${law} The holders have not spoken a receiving name into the house. Many funders, none more. Fun, love, or joy — no other reason. You may get nothing.`,
       options: [
-        { id: "seat-my-zcash", label: "Seat my zs1 or u1 — I can receive", input: "line" },
+        openZodl,
+        { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1 — I can receive", input: "line" },
         { id: "add-rail", label: "Add a rail — any crypto, over time", input: "line" },
         close,
       ],
     };
   }
+  const pay = zip321(addr);
   return {
     speaker: "A quiet door",
-    text: `${kinds}\n\nA receiving name is seated:\n${addr}\n\n${law} A giver has already met the door. No amount will be posted. Rank is still zero.`,
+    text: `${kinds}\n\nA receiving name is seated in this house.\n\n${law} ZIP-321 may open Zodl with that name. No amount will be posted. Rank is still zero.`,
     options: [
+      ...(pay ? [{ id: "open-zodl-pay", label: "Open Zodl — give privately", href: pay }] : []),
+      openZodl,
       { id: "tip", label: "I give, privately" },
       { id: "tip-ahead", label: "I give to get further" },
+      { id: "seat-my-zcash", label: "Seat my Zodl zs1 or u1", input: "line" },
       { id: "hack-zcash", label: "Take the rail. Hack the peace." },
       close,
     ],

@@ -12,6 +12,8 @@ export type Option = {
   next?: string;
   effects?: Effect[];
   input?: "line" | "work";
+  /** Open a door outside the house (Zodl, ZIP-321). Not a throne. */
+  href?: string;
 };
 
 export type Effect =

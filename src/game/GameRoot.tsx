@@ -7,6 +7,8 @@ import { ENDING_TEXT, SYMBOL_NAMES } from "./content";
 import { unlockAudio, resumeAudio } from "./audio";
 import { defaultSave } from "./save";
 import { shareUrl } from "./door";
+import { recordVisit } from "../lib/tally";
+import { openZodl } from "./zodl";
 import type { MaskId } from "./types";
 
 export function GameRoot() {
@@ -47,6 +49,24 @@ export function GameRoot() {
     const t = window.setTimeout(() => finishUnmake(), 7000);
     return () => window.clearTimeout(t);
   }, [unmaking, finishUnmake]);
+
+  useEffect(() => {
+    const day = new Date().toISOString().slice(0, 10);
+    const key = `aught:${day}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+    } catch {
+      return;
+    }
+    void recordVisit().then((r) => {
+      if (!r.ok) return;
+      try {
+        sessionStorage.setItem(key, "1");
+      } catch {
+        /* ignore */
+      }
+    });
+  }, []);
 
   return (
     <div className="fixed inset-0 bg-bg text-fg">
@@ -102,7 +122,7 @@ function TitleOverlay() {
   }
   return (
     <div
-      className="absolute inset-0 z-20 flex flex-col items-center justify-end pb-16 px-6"
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center overflow-y-auto pt-24 pb-16 px-6"
       style={{
         backgroundImage: "linear-gradient(to top, var(--color-bg) 12%, transparent 55%), url(/textures/sky.jpg)",
         backgroundSize: "cover",
@@ -111,9 +131,15 @@ function TitleOverlay() {
     >
       <div className="max-w-lg text-center animate-[nekyia-rise_1.2s_ease]">
         <p className="text-accent tracking-[0.45em] uppercase text-xs mb-3 font-mono">You start</p>
-        <h1 className="font-display text-6xl md:text-7xl font-medium tracking-wide mb-6">Nekyia</h1>
-        <p className="text-muted text-lg leading-relaxed mb-8">
+        <h1 className="font-display text-5xl md:text-7xl font-medium tracking-wide mb-4">Nekyia</h1>
+        <p className="text-muted text-base md:text-lg leading-relaxed mb-3">
           First person. A body, a shadow. Nobody knows which world. Interplanetary, or a park. You just start.
+        </p>
+        <p className="text-muted text-base leading-relaxed mb-8">
+          This is a walking, not a lesson. You look through your own eyes. Lamps, rooms, other lanterns if they came. No score. No one is ahead. Close whenever. One who loses themself may never be lost.
+        </p>
+        <p className="text-subtle text-sm leading-relaxed mb-8">
+          A wallet may sit with you when you enter. Zodl. We do not hold keys.
         </p>
         <div className="flex flex-col gap-3 items-center">
           <button
@@ -203,6 +229,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
   const ending = useGame((s) => s.ending);
   const companions = useGame((s) => s.companions);
   const philosophy = useGame((s) => String(s.flags.philosophy ?? ""));
+  const zodlSeated = useGame((s) => Boolean(String(s.flags.myShielded ?? "").trim()));
 
   useEffect(() => {
     const ch = new BroadcastChannel("nekyia-walk");
@@ -390,6 +417,13 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         {companions > 0 ? " · another lantern" : ""}
       </div>
       <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <IconBtn
+          label={zodlSeated ? "Zodl · seated" : "Zodl"}
+          onClick={() => {
+            document.exitPointerLock?.();
+            useGame.getState().interact("zodl");
+          }}
+        />
         <IconBtn label="Notes" onClick={() => useGame.getState().toggleJournal(true)} />
         <IconBtn label="Pause" onClick={() => useGame.getState().togglePause(true)} />
       </div>
@@ -473,6 +507,7 @@ function DialoguePanel() {
               className="text-left min-h-11 px-3 rounded-md hover:bg-surface-2 text-accent"
               onClick={() => {
                 document.exitPointerLock?.();
+                if (o.href) openZodl(o.href);
                 if (o.input === "line") choose(o.id, { text: line });
                 else if (o.input === "work") choose(o.id, { title, body });
                 else choose(o.id);

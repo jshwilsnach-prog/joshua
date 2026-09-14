@@ -1,11 +1,12 @@
 import { create } from "zustand";
 import { CHAMBERS, PLAYER_START, PROPS } from "./maze";
 import { encounterAfter, getEncounter, ideaIsOriginal } from "./content";
-import { addRail, addToHouse, addWorld, isCryptoRail, isExclusion, isLawBreak, isShieldedZcash, loadHouse, maybeArrival, placeTip, rememberKnowledge, seatShielded } from "./house";
+import { addCrack, addRail, addToHouse, addWorld, isCryptoRail, isExclusion, isLawBreak, isShieldedZcash, loadHouse, maybeArrival, placeTip, rememberKnowledge, seatShielded } from "./house";
 import { giftName } from "./names";
 import { defaultSave, loadSave, writeSave } from "./save";
 import type { Aspect, Encounter, EndingId, GameSnap, MaskId, SaveState } from "./types";
 import { chime } from "./audio";
+import { asRank } from "./law";
 
 const ASPECTS: Aspect[] = ["persona", "shadow", "anima", "opposites", "self", "creator", "destroyer"];
 
@@ -55,6 +56,7 @@ export type GameStore = SaveState & {
   closeEncounter: () => void;
   tickKairos: (dt: number, motion?: number) => void;
   visitChamber: (id: string) => void;
+  crossThreshold: () => void;
   setNearby: (n: Nearby) => void;
   setWhisper: (text: string) => void;
   toggleJournal: (open?: boolean) => void;
@@ -127,17 +129,19 @@ export const useGame = create<GameStore>((set, get) => {
       next.x = here.x;
       next.z = here.z;
       next.yaw = Math.random() * Math.PI * 2;
+      next.flags.sawZodl = true;
+      const wallet = encounterAfter("enter", "zcash", snap({ ...next, kairos: next.kairos }));
       set({
         ...next,
-        encounterId: null,
-        encounter: null,
+        encounterId: "zcash",
+        encounter: wallet,
         whisper: next.flags.blind
-          ? "You start. The lamp is not a picture. The game is the game."
+          ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
           : next.flags.deaf
-            ? "You start. The rooms have no sound. The game is the game."
+            ? "You start. A wallet may sit with you. Zodl. We do not hold keys."
             : next.flags.mute
-              ? "You start. You have no voice. Writing is not speech. The game is the game."
-              : "You start. Shadow theoretically 0%. You may decide.",
+              ? "You start. A wallet may sit with you. Writing is not speech. Zodl. We do not hold keys."
+              : "You start. A wallet may sit with you. Open Zodl, or walk. Rank is 0.",
         paused: false,
         journalOpen: false,
         nearby: null,
@@ -161,7 +165,7 @@ export const useGame = create<GameStore>((set, get) => {
         unmaking: false,
         thread: String(s.flags.thread ?? ""),
         hasSave: true,
-        whisper: dim <= 0 ? "A loop. The point opened. You start behind the eyes." : s.whisper,
+        whisper: dim <= 0 ? "A loop. The point opened. You start behind the eyes." : "",
       });
     },
     interact: (id) => {
@@ -170,6 +174,25 @@ export const useGame = create<GameStore>((set, get) => {
       const near = s.nearby;
       const prop = PROPS.find((p) => p.id === id);
       const encId = prop?.symbolId ? `sym:${prop.symbolId}` : id;
+      if (encId === "aught") {
+        void import("../lib/tally").then(async ({ getTally }) => {
+          const t = await getTally();
+          const todayHits = t.days.find((d) => d.day === t.today)?.hits ?? 0;
+          const flags = {
+            ...get().flags,
+            aughtToday: t.today,
+            aughtHits: todayHits,
+            aughtTotal: t.total,
+          };
+          set({
+            encounterId: "aught",
+            encounter: getEncounter("aught", snap({ ...get(), flags })),
+            journalOpen: false,
+            flags,
+          });
+        });
+        return;
+      }
       const encounter = getEncounter(encId, snap({ ...s, flags: { ...s.flags, nearShielded: near?.shielded ?? s.flags.nearShielded, nearIdea: near?.idea ?? "", nearShould: near?.should ?? "", nearWound: near?.wound ?? "0", nearForm: near?.form ?? "" } }));
       set({ encounterId: encId, encounter, journalOpen: false, flags: { ...s.flags, nearShielded: near?.shielded ?? "", nearIdea: near?.idea ?? "", nearShould: near?.should ?? "", nearWound: near?.wound ?? "0", nearForm: near?.form ?? "" } });
     },
@@ -180,6 +203,23 @@ export const useGame = create<GameStore>((set, get) => {
       if (!enc || !id) return;
       const opt = enc.options.find((o) => o.id === optionId);
       if (!opt) return;
+      if (opt.id === "open-zodl" || opt.id === "open-zodl-pay") {
+        asRank(0);
+        addRail("zodl");
+        applyEffects(
+          [
+            {
+              type: "journal",
+              title: "Zodl",
+              body: "Zashi became Zodl. The house opened their door. We do not hold keys. A zs1 or u1 may be seated. Transparent is refused. Rank is 0.",
+            },
+            { type: "whisper", text: "Zodl is a lantern, not a throne. Copy Receive. Seat it. Or walk." },
+          ],
+          get,
+          set,
+        );
+        return;
+      }
       if (opt.id === "hack-zcash") {
         applyEffects(
           [
@@ -316,6 +356,28 @@ export const useGame = create<GameStore>((set, get) => {
           );
           return;
         }
+        if (opt.id === "hang-map") {
+          if (isExclusion(text) || isLawBreak(text) || text.trim().length < 4) {
+            applyEffects(
+              [{ type: "whisper", text: "A line, not a rank. The map is the house." }, { type: "close" }],
+              get,
+              set,
+            );
+            return;
+          }
+          rememberKnowledge("A line on the map", text.trim().slice(0, 500));
+          applyEffects(
+            [
+              { type: "flag", key: "mapped", value: true },
+              { type: "journal", title: "A line on the map", body: text.trim().slice(0, 500) },
+              { type: "whisper", text: "Hung. Not a key. Someone still mapping may add more." },
+              { type: "close" },
+            ],
+            get,
+            set,
+          );
+          return;
+        }
         if (opt.id === "write-world") {
           if (isExclusion(text) || isLawBreak(text)) {
             applyEffects(
@@ -436,6 +498,31 @@ export const useGame = create<GameStore>((set, get) => {
             [
               { type: "journal", title: "A rail", body: `Added over time: ${text.trim()}. Rails now: ${h.rails.join(", ")}. Cash will wait until someone figures how to receive. The game does not wait.` },
               { type: "whisper", text: "A rail was laid. The walking was already the walking." },
+              { type: "close" },
+            ],
+            get,
+            set,
+          );
+          return;
+        }
+        if (opt.id === "seat-crack") {
+          const m = text.match(/\b((?:zs1|u1|ztestsapling|utest1)[a-z0-9]{20,})\b/i);
+          const addr = m?.[1] ?? "";
+          const proof = text.replace(addr, "").trim();
+          if (!isShieldedZcash(addr) || proof.length < 8) {
+            applyEffects(
+              [{ type: "whisper", text: "A proof, then a zs1 or u1. There is no first. Transparent is refused." }, { type: "close" }],
+              get,
+              set,
+            );
+            return;
+          }
+          addCrack(proof, addr);
+          applyEffects(
+            [
+              { type: "flag", key: "seatedCrack", value: true },
+              { type: "journal", title: "A crack", body: proof },
+              { type: "whisper", text: "Seated. There is no first. The holders may send. Or not. Rank is still 0." },
               { type: "close" },
             ],
             get,
@@ -634,6 +721,10 @@ export const useGame = create<GameStore>((set, get) => {
         whisper: ch?.whisper ?? s.whisper,
       });
       schedulePersist(get);
+    },
+    crossThreshold: () => {
+      // Present tense. No persist. Titles and metrics do not come through the door.
+      set({ whisper: "No title comes with you. Rank is 0 in this room too." });
     },
     setNearby: (n) => set({ nearby: n }),
     setWhisper: (text) => set({ whisper: text }),
