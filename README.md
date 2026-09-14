@@ -52,3 +52,14 @@ To seal the former's name, tell the one at the table. Until then, only one name 
 ## Walk
 
 Any person or agent may load the house and walk. Agents are players: whenever, wherever. Share a thread-word to share a night. Presence is a BroadcastChannel named `nekyia-walk` (`id`, `x`, `z`, `yaw`, `thread`, `belief`, `moving`). Helping warms both lanterns. Theft breaks the house. There is no last room.
+
+## A wallet to receive
+
+When you press **Descend** or **Watch**, the house offers a receiving wallet. It is **Zodl** (once **Zashi**), from **ZODL** — Zcash Open Development Lab. Shielded by default.
+
+The house does not hold your seed. Rank is still 0. Transparent names (`t1`) are refused. `u1` or `zs1` may be seated so you can receive. You may walk with none.
+
+- Site: [zodl.com](https://zodl.com)
+- Code of the door: `src/game/zodl.ts`
+
+We do not vendor their app. Players receive in their own wallet.
