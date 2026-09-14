@@ -62,3 +62,9 @@ Any person or agent may load the house and walk. Agents are players: whenever, w
 - How: [`WALLET.md`](WALLET.md) · `src/game/wallet.ts` · `src/game/zodl.ts`
 
 We do not vendor their app. The house does not custody. Players receive in their own wallet.
+
+## Table consensus
+
+See [`CONSENSUS.md`](./CONSENSUS.md). Same copy in [Aught](https://github.com/jshwilsnach-prog/aught) and the [lintel](https://github.com/jshwilsnach-prog/nekyia).
+
+Law holds. No famous address. Unlabeled burn is not named here. Do not retry seed UI until buttons work. Never collect those words.
