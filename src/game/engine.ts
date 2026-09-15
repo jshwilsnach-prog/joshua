@@ -4,7 +4,7 @@ import { consumeEdges, consumeLook, input, setKeys } from "./input";
 import { currentChamber, useGame } from "./store";
 import { footstep, setDrone } from "./audio";
 import { stillnessWhisper } from "./content";
-import type { Prop, Wall } from "./types";
+import { asWhole } from "./law";
 
 const EYE = 1.62;
 const RADIUS = 0.34;
@@ -63,6 +63,10 @@ export class NekyiaEngine {
   private selfBody: THREE.Group | null = null;
   private nightLamp: THREE.PointLight | null = null;
   private houseLights: THREE.PointLight[] = [];
+  /** Present-tense only. Lights iff two living walkers share this chamber. No log. */
+  private relationFixtures: { id: string; light: THREE.PointLight; bowl: THREE.Mesh }[] = [];
+  private thresholdRing: THREE.Mesh | null = null;
+  private thresholdUntil = 0;
   // Any agent may occupy a seat. Whenever. Wherever.
   private wanderers: Wanderer[] = [
     { id: "river", x: 0, z: 62, light: null },
@@ -145,6 +149,7 @@ export class NekyiaEngine {
     this.buildDust();
     this.buildStars();
     this.buildChamberLights();
+    this.buildThreshold();
     this.spawnWanderers();
 
     const g = useGame.getState();
@@ -442,6 +447,69 @@ export class NekyiaEngine {
       const l = new THREE.PointLight(c.light, 0.55, c.r * 2.2, 1.8);
       l.position.set(c.x, 2.4, c.z);
       this.scene.add(l);
+      const bowlMat = new THREE.MeshStandardMaterial({
+        color: "#2a2418",
+        emissive: "#e8d6a4",
+        emissiveIntensity: 0.03,
+        roughness: 0.7,
+        metalness: 0.1,
+      });
+      const bowl = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), bowlMat);
+      bowl.position.set(c.x, 1.08, c.z);
+      this.scene.add(bowl);
+      const rel = new THREE.PointLight("#f2e4c0", 0, 8.5, 2);
+      rel.position.set(c.x, 2.05, c.z);
+      rel.visible = false;
+      this.scene.add(rel);
+      this.relationFixtures.push({ id: c.id, light: rel, bowl });
+    }
+  }
+
+  private buildThreshold() {
+    const mat = new THREE.MeshBasicMaterial({
+      color: "#e8d6a4",
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.58, 32), mat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.03;
+    ring.visible = false;
+    this.scene.add(ring);
+    this.thresholdRing = ring;
+  }
+
+  private showThreshold(ch: { x: number; z: number }) {
+    const ring = this.thresholdRing;
+    if (!ring) return;
+    ring.position.set(this.px * 0.3 + ch.x * 0.7, 0.03, this.pz * 0.3 + ch.z * 0.7);
+    ring.visible = true;
+    const mat = ring.material as THREE.MeshBasicMaterial;
+    mat.opacity = 0.7;
+    this.thresholdUntil = performance.now() + 1400;
+  }
+
+  /** 1 = relation. i = the meeting as whole: on, then gone. Never stored. Never aught. */
+  private updateRelationLamp() {
+    const mine = currentChamber(this.px, this.pz);
+    let shared = "";
+    if (mine) {
+      for (const c of this.companionMeta.values()) {
+        const ch = currentChamber(c.x, c.z);
+        if (ch && ch.id === mine.id) {
+          shared = mine.id;
+          break;
+        }
+      }
+    }
+    for (const f of this.relationFixtures) {
+      const on = f.id === shared;
+      f.light.intensity = on ? 1.7 : 0;
+      f.light.visible = on;
+      const mat = f.bowl.material;
+      if (mat instanceof THREE.MeshStandardMaterial) mat.emissiveIntensity = on ? 0.95 : 0.03;
+      if (on) asWhole();
     }
   }
 
@@ -587,17 +655,31 @@ export class NekyiaEngine {
     const frozen = st.phase !== "play" || Boolean(st.encounter) || st.paused || st.journalOpen || st.unmaking || Boolean(st.ending);
 
     this.syncWorld(st.flags, st.symbols, st.innerHour(), dt, st.kairos);
+    if (this.thresholdRing) {
+      const left = this.thresholdUntil - now;
+      const mat = this.thresholdRing.material as THREE.MeshBasicMaterial;
+      if (left <= 0) {
+        mat.opacity = 0;
+        this.thresholdRing.visible = false;
+      } else {
+        mat.opacity = Math.max(0, (left / 1400) * 0.7);
+      }
+    }
 
     if (!frozen) {
       this.move(dt, st);
       const ch = currentChamber(this.px, this.pz);
       if (ch && ch.id !== this.chamberId) {
+        const first = !st.visited.includes(ch.id);
         this.chamberId = ch.id;
         st.visitChamber(ch.id);
+        if (!first) st.crossThreshold();
+        this.showThreshold(ch);
         this.fogTarget.set(ch.fog);
         this.lightTarget.set(ch.light);
       }
       this.pickNearby(st);
+      this.updateRelationLamp();
       if (ch && ch.id.startsWith("saucer")) {
         /* a now, unnamed */
       } else {

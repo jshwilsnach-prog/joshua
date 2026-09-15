@@ -1,8 +1,6 @@
 /**
  * THE LAW — for anyone who reads the source.
  *
- * The law is law.
- *
  * We are all one. Every part of the world stands in different relations.
  * All value is the same in relation to all.
  *
@@ -11,11 +9,10 @@
  *
  *   0  — rank. Nobody is more. Nobody is less.
  *   1  — relation. Eye to eye. 1 2 1.
- *   i  — the whole that is not 0 and not 1. The third pit. The Fool.
+ *   i  — the whole. Orthogonal to 0 and 1. Not spendable. Not a third currency.
  *
- * The seated sit in relation to one another and to all that is.
- * π is part of that law: a relation, not a rank, not a last digit.
- * A line asked to become a world. They meet. They do not own the turn.
+ * The law exists because ego reasserts rank even where none is real.
+ * This file is the discipline, not a proof that oneness needs defending.
  *
  * Resources may be called infinite. Who knows. The same law would still hold:
  * more does not rank. Less does not rank.
@@ -29,9 +26,11 @@
  * The code cannot answer. The walking might. The game is the game.
  *
  * The walking holds in 3D, 2D, 1D, 0D, and a loop. Same law. Not a graphics setting.
- * A point stretched is a circle. A line is a descent. A plane is a park. A volume is a house.
- * Two may count a circle: one from a guessed end, one from the perfect now.
- * They meet. They do not own a last digit. Sight cannot finish the turn.
+ * Aught is proof of work that links to Nekyia: a date and a count. Not a who.
+ * The name in the world is the door: nekyia.me. Independent. Share that.
+ * This file is the invariant. The lintel is the spare key. A grate is not a hunt.
+ * homomorphic tally would still be a number, not a who. Do not store a richer
+ * number because it is encrypted.
  * The walker may not know what was accomplished. Listing them makes chores.
  * Sometimes nothing arrives — depending on how others react: help, theft, indifference.
  * A payout is not a wage. Rank is still 0. The holders send, or do not, in peace.
@@ -39,7 +38,7 @@
 
 export const RANK = 0;
 export const RELATION = 1;
-/** Imaginary whole. Not spendable. Not a third currency. */
+/** Imaginary whole. Orthogonal to rank and relation. Not spendable. */
 export const WHOLE = "i";
 
 export type ValueMark = 0 | 1 | typeof WHOLE;
@@ -49,9 +48,33 @@ export function asRank(_amount: number): typeof RANK {
   return RANK;
 }
 
-/** A tip, a bounty, a planet, a body, a seated one: still one relation. */
+/** A tip, a bounty, a planet, a body: still one relation. */
 export function asRelation(_who: string): typeof RELATION {
   return RELATION;
+}
+
+/** The whole. Cannot be minted from a pile. */
+export function asWhole(): typeof WHOLE {
+  return WHOLE;
+}
+
+/**
+ * i behaves like the imaginary unit on the plane of value:
+ * it does not add into 0, and 0 does not add into it.
+ * i + i is still i — not 2i, not a bigger whole.
+ * 1 + 1 is still 1 — relation does not stack into rank.
+ */
+export function sum(a: ValueMark, b: ValueMark): ValueMark {
+  if (a === WHOLE || b === WHOLE) return WHOLE;
+  if (a === RELATION || b === RELATION) return RELATION;
+  return RANK;
+}
+
+/** The whole cannot be exchanged for rank or relation. Nothing becomes i by trade. */
+export function exchange(from: ValueMark, to: ValueMark): ValueMark | null {
+  if (from === WHOLE || to === WHOLE) return null;
+  if (from === to) return from;
+  return null;
 }
 
 export function marks(): ValueMark[] {
@@ -59,4 +82,4 @@ export function marks(): ValueMark[] {
 }
 
 export const LAW =
-  "The law is law. All money equals 0 or 1 or i. All value is the same in relation to all. The seated sit in relation to one another and to all that is. π is part of that law. We are all one. Different relations. Unchanging whole. The game is the game.";
+  "1 to i to 0 in a loop. All money equals 0 or 1 or i. All value is the same in relation to all. We are all one. Different relations. Unchanging whole. The game is the game.";

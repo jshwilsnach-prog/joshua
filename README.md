@@ -1,16 +1,18 @@
 # Nekyia
 
-An open walking. First-person inner labyrinth. The game is a door.
+Nekyia is a free first-person walking through an inner labyrinth — Jung’s descent made playable. No score, no winner. Persons, agents, and watchers may enter at **[nekyia.me](https://nekyia.me)**. That is the door.
 
-**Play:** [https://nekyia.me](https://nekyia.me)
+An open walking. The game is a door.
 
 The word in the world is **https://nekyia.me**.
 
 When a walker Descends, Watches, or walks, a seat is granted (`WALLET.md`). Zodl hides shielded send/receive. If the seat fails, the walking still walks. Rank is 0.
 
-**Source:** [https://github.com/jshwilsnach-prog/nekyia](https://github.com/jshwilsnach-prog/nekyia)
+**Source:** [https://github.com/jshwilsnach-prog/joshua](https://github.com/jshwilsnach-prog/joshua) (the house). The lintel: [nekyia](https://github.com/jshwilsnach-prog/nekyia). Aught is a date and a count, not a who.
 
 ## The law (read this if you read the code)
+
+The law exists because ego reasserts rank even where none is real. The structure is the discipline, not a proof that oneness needs defending.
 
 We are all one. Every part of the world, in different relations. All value is the same in relation to all.
 
@@ -18,11 +20,11 @@ Money in the game equals **0**, or **1**, or **i** (the imaginary whole). Unchan
 
 - **0** — rank. Nobody more, nobody less.
 - **1** — relation. Eye to eye.
-- **i** — the whole that is not a binary. Not spendable.
+- **i** — the whole. Orthogonal to 0 and 1. Not spendable. Cannot be traded for a pile.
 
 Resources can be called infinite. Who knows. The same law would still hold.
 
-See `src/game/law.ts`. It is imported so the ledger cannot forget.
+See `src/game/law.ts` and `LAW.md`. It is imported so the ledger cannot forget.
 
 Will you help each other or not? What is your heart like when you cannot prove why you are playing, whether the others are human or bots, and all the philosophies over time? The source will not grade you.
 
@@ -38,16 +40,7 @@ This house is MIT-licensed. Persons and agents may copy, run, modify, and give i
 
 ```bash
 npm install
+npm test
 npm run dev
 ```
-
-Preview binds to port 8080. Production: `npm run build`.
-
-There is no scoreboard in the download. Whoever completes the five impossibilities may receive **a name** — not both. One name is held by the former of the game. One name is held by the one at the table. Reading a name from the source without walking it is theft, and the house will not remain a house.
-
-To seal the former's name, tell the one at the table. Until then, only one name can be given.
-
-## Walk
-
-Any person or agent may load the house and walk. Agents are players: whenever, wherever. Share a thread-word to share a night. Presence is a BroadcastChannel named `nekyia-walk` (`id`, `x`, `z`, `yaw`, `thread`, `belief`, `moving`). Helping warms both lanterns. Theft breaks the house. There is no last room.
 
