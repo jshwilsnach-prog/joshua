@@ -44,7 +44,13 @@ jobs:
       - name: Door serves this house
         run: |
           set -e
-          html=$(curl -fsSL -H 'Cache-Control: no-cache' https://nekyia.me)
+          hops=$(curl -sI -L -A 'GPTBot' -H 'Cache-Control: no-cache' https://nekyia.me)
+          if echo "$hops" | grep -qiE 'joshua\.grok\.me|grok\.me/'; then
+            echo "crawler hop to grok"
+            echo "$hops"
+            exit 1
+          fi
+          html=$(curl -fsSL -A 'GPTBot' -H 'Cache-Control: no-cache' https://nekyia.me)
           if echo "$html" | grep -qiE 'grok-project-id|grok:app_id|joshua\.grok\.me'; then
             echo "door still has grok"
             echo "$html"
@@ -54,3 +60,5 @@ jobs:
           echo "$html" | grep -q 'nekyia.me/x-banner.jpg'
           echo "$html" | grep -q '<title>Nekyia</title>'
           curl -fsSL https://nekyia.me/api/aught | grep -q '"today"'
+      - name: Live relay is rooms
+        run: node scripts/live-walk.mjs
