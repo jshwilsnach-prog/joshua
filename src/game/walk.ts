@@ -36,9 +36,14 @@ export function startWalk(h: WalkHandlers) {
   let room = walkThread(h.thread());
   let retries = 0;
   let wake: number | null = null;
+  let lastPong = Date.now();
 
   const deliver = (data: WalkMsg) => {
     if (dead) return;
+    if (data.type === "pong") {
+      lastPong = Date.now();
+      return;
+    }
     if (data.id === h.id) return;
     h.onMessage(data);
   };
@@ -151,8 +156,27 @@ export function startWalk(h: WalkHandlers) {
       closeBc();
       openWs();
     }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      if (Date.now() - lastPong > 8000) {
+        closeWs();
+        openBc();
+        later();
+      } else {
+        send({ type: "ping" });
+      }
+    }
     send(h.pose());
   }, 240);
+
+  const onWake = () => {
+    if (dead) return;
+    retries = 0;
+    openWs();
+  };
+  window.addEventListener("online", onWake);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") onWake();
+  });
 
   return {
     send,
@@ -161,6 +185,7 @@ export function startWalk(h: WalkHandlers) {
       if (outbound === send) outbound = null;
       window.clearInterval(tick);
       if (wake != null) window.clearTimeout(wake);
+      window.removeEventListener("online", onWake);
       closeWs();
       closeBc();
     },

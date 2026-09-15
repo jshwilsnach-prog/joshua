@@ -79,6 +79,14 @@ export class WalkRoom {
     }
     if (!data || typeof data !== "object") return;
     if (!sameRoom(room, data.thread)) return;
+    if (data.type === "ping") {
+      try {
+        ws.send(JSON.stringify({ type: "pong" }));
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
     let sid = att.sid;
     if (!sid) {
       sid = crypto.randomUUID();

@@ -270,11 +270,12 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
     const nearBody = (who: string, s: ReturnType<typeof useGame.getState>) => {
       const pose = who ? others.get(who) : undefined;
       if (!pose || Date.now() - pose.at > 4000) return false;
-      return Math.hypot(pose.x - s.x, pose.z - s.z) <= 3.2;
+      return isNear(s.x, s.z, pose.x, pose.z);
     };
     const takeOnce = () => {
-      if (Date.now() - lastTaken < 8000) return false;
-      lastTaken = Date.now();
+      const now = Date.now();
+      if (!canTake(lastTaken, now, TAKE_MS)) return false;
+      lastTaken = now;
       return true;
     };
     const applyLive = () => {
@@ -376,6 +377,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "key") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
+          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
           const mine = String(s.flags.keyHash ?? "");
           if (mine && d.hash && mine === String(d.hash)) {
             useGame.setState({
@@ -387,6 +389,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "help") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
+          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
           useGame.setState({
             flags: { ...s.flags, robbed: false, helped: true },
             whisper: "Someone asked. You helped. Both lanterns warmed.",
