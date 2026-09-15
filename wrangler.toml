@@ -10,7 +10,7 @@ run_worker_first = true
 
 [[kv_namespaces]]
 binding = "AUGHT"
-id = "REPLACE_WITH_WRANGLER_KV_ID"
+id = "408b8ce2e0604f42a00c91bbfcb5fdec"
 
 [[durable_objects.bindings]]
 name = "WALK"
