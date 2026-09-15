@@ -174,7 +174,12 @@ export function startWalk(h: WalkHandlers) {
 
   const onWake = () => {
     if (dead) return;
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
     retries = 0;
+    if (wake != null) {
+      window.clearTimeout(wake);
+      wake = null;
+    }
     openWs();
   };
   const onVisible = () => {
