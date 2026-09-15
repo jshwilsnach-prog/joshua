@@ -5,6 +5,7 @@ import { currentChamber, useGame } from "./store";
 import { footstep, setDrone } from "./audio";
 import { stillnessWhisper } from "./content";
 import { asWhole } from "./law";
+import type { Prop, Wall } from "./types";
 
 const EYE = 1.62;
 const RADIUS = 0.34;
