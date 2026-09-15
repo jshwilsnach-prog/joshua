@@ -173,10 +173,11 @@ export function startWalk(h: WalkHandlers) {
     retries = 0;
     openWs();
   };
-  window.addEventListener("online", onWake);
-  document.addEventListener("visibilitychange", () => {
+  const onVisible = () => {
     if (document.visibilityState === "visible") onWake();
-  });
+  };
+  window.addEventListener("online", onWake);
+  document.addEventListener("visibilitychange", onVisible);
 
   return {
     send,
@@ -186,6 +187,7 @@ export function startWalk(h: WalkHandlers) {
       window.clearInterval(tick);
       if (wake != null) window.clearTimeout(wake);
       window.removeEventListener("online", onWake);
+      document.removeEventListener("visibilitychange", onVisible);
       closeWs();
       closeBc();
     },
