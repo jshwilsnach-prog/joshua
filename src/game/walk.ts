@@ -2,6 +2,7 @@
  * Two living walkers, one lamp.
  * /api/walk is a relay: nothing stored, nothing logged.
  * Rooms are keyed by thread. Empty thread is the saucer.
+ * A socket hears one room. Many sockets can still knock.
  * If the socket is not there, same-origin BroadcastChannel is the fallback.
  * Presence is not a who. No address, no seed, no name.
  */

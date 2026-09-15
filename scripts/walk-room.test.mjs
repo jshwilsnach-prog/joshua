@@ -1,3 +1,4 @@
+/** A socket hears one room. Many sockets can still knock. */
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import worker, { WalkRoom } from "../cloudflare/worker.js";

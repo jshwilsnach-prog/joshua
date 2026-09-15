@@ -3,6 +3,7 @@
  * Static rooms + /api/aught (KV) + /api/walk (relay).
  * No auth. No people. Nothing on /api/walk is stored or logged.
  * Walk rooms are keyed by thread. Empty thread is the saucer.
+ * A socket hears one room. Many sockets can still knock.
  */
 
 import { walkKey, sameRoom } from "./walk-key.js";
