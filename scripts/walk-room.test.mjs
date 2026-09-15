@@ -72,4 +72,21 @@ describe("walk worker rooms", () => {
     room.webSocketMessage(a, JSON.stringify({ thread: "beta", idea: "no" }));
     assert.equal(b.sent.length, 1);
   });
+  it("the relay names the socket, not the client", () => {
+    const a = new FakeWs();
+    const b = new FakeWs();
+    a.serializeAttachment({ key: "alpha", sid: "relay-a" });
+    b.serializeAttachment({ key: "alpha", sid: "relay-b" });
+    const room = new WalkRoom({
+      acceptWebSocket() {},
+      getWebSockets() {
+        return [a, b];
+      },
+    });
+    room.webSocketMessage(a, JSON.stringify({ thread: "alpha", id: "forged", idea: "here" }));
+    assert.equal(b.sent.length, 1);
+    const ok = JSON.parse(b.sent[0]);
+    assert.equal(ok.id, "relay-a");
+    assert.equal(ok.idea, "here");
+  });
 });

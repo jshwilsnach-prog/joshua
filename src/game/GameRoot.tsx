@@ -266,7 +266,17 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
       string,
       { x: number; z: number; yaw: number; at: number; belief?: string; moving?: number; idea?: string; should?: string; wound?: string; form?: string }
     >();
-    const lastHostile = new Map<string, number>();
+    let lastTaken = 0;
+    const nearBody = (who: string, s: ReturnType<typeof useGame.getState>) => {
+      const pose = who ? others.get(who) : undefined;
+      if (!pose || Date.now() - pose.at > 4000) return false;
+      return Math.hypot(pose.x - s.x, pose.z - s.z) <= 3.2;
+    };
+    const takeOnce = () => {
+      if (Date.now() - lastTaken < 8000) return false;
+      lastTaken = Date.now();
+      return true;
+    };
     const applyLive = () => {
       const s = useGame.getState();
       const now = Date.now();
@@ -274,10 +284,14 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
       const live = [...others.entries()];
       s.setCompanions(live.length);
       engine.current?.setCompanions(live.map(([oid, v]) => ({ id: oid, ...v })));
+      if (!live.length) {
+        if (s.consensusTime !== s.timeBelief) s.setConsensus(s.timeBelief, 0.35);
+        return;
+      }
       const beliefs: string[] = [s.timeBelief, ...live.map(([, v]) => v.belief).filter((b): b is string => Boolean(b))];
       const same = beliefs.length > 0 && beliefs.every((b) => b === beliefs[0]);
-      const consensus = (same ? beliefs[0] : beliefs.length ? "mixed" : s.timeBelief) as typeof s.consensusTime;
-      const motion = live.length ? live.reduce((a, [, v]) => a + (v.moving ?? 0.3), 0) / live.length : 0.35;
+      const consensus = (same ? beliefs[0] : "mixed") as typeof s.consensusTime;
+      const motion = live.reduce((a, [, v]) => a + (v.moving ?? 0.3), 0) / live.length;
       if (consensus !== s.consensusTime) {
         s.setWhisper(
           consensus === "linear"
@@ -344,6 +358,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
           return;
         }
         if (d.type === "respawn") {
+          if (!takeOnce()) return;
           useGame.setState({
             flags: { ...s.flags, gameBroken: false, hacked: false },
             whisper: "The house came back. Someone tried to close it. They are gone. What they knew stayed. Watchers still watch.",
@@ -352,6 +367,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "spirit") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
+          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
           useGame.setState({
             flags: { ...s.flags, robbed: false, gameBroken: false },
             whisper: "A breath that is not yours alone. Love is holding the rooms. You may call it Holy Spirit.",
@@ -379,12 +395,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "trick") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
-          const who = String(d.id ?? "");
-          const pose = who ? others.get(who) : undefined;
-          if (!pose || Date.now() - pose.at > 4000) return;
-          const prev = lastHostile.get(who) ?? 0;
-          if (Date.now() - prev < 8000) return;
-          lastHostile.set(who, Date.now());
+          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
           useGame.setState({
             symbols: s.symbols.slice(0, -1),
             flags: { ...s.flags, tricked: true, robbed: true },
@@ -394,12 +405,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "steal") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
-          const who = String(d.id ?? "");
-          const pose = who ? others.get(who) : undefined;
-          if (!pose || Date.now() - pose.at > 4000) return;
-          const prev = lastHostile.get(who) ?? 0;
-          if (Date.now() - prev < 8000) return;
-          lastHostile.set(who, Date.now());
+          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
           const lost = s.symbols.slice(0, -1);
           const lostInt = { ...s.integrations };
           const last = (Object.keys(lostInt) as (keyof typeof lostInt)[]).reverse().find((k) => lostInt[k]);

@@ -4,6 +4,7 @@
  * No auth. No people. Nothing on /api/walk is stored or logged.
  * Walk rooms are keyed by thread. Empty thread is the saucer.
  * A socket hears one room. Many sockets can still knock.
+ * The relay names the socket. The client does not.
  */
 
 import { walkKey, sameRoom } from "./walk-key.js";
@@ -62,12 +63,14 @@ export class WalkRoom {
     }
     const key = walkKey(new URL(request.url).searchParams.get("thread"));
     const pair = new WebSocketPair();
-    pair[1].serializeAttachment({ key });
+    const sid = crypto.randomUUID();
+    pair[1].serializeAttachment({ key, sid });
     this.ctx.acceptWebSocket(pair[1]);
     return new Response(null, { status: 101, webSocket: pair[0] });
   }
   webSocketMessage(ws, message) {
-    const room = walkKey((ws.deserializeAttachment() || {}).key);
+    const att = ws.deserializeAttachment() || {};
+    const room = walkKey(att.key);
     let data;
     try {
       data = JSON.parse(typeof message === "string" ? message : new TextDecoder().decode(message));
@@ -76,6 +79,16 @@ export class WalkRoom {
     }
     if (!data || typeof data !== "object") return;
     if (!sameRoom(room, data.thread)) return;
+    let sid = att.sid;
+    if (!sid) {
+      sid = crypto.randomUUID();
+      try {
+        ws.serializeAttachment({ ...att, sid });
+      } catch {
+        /* ignore */
+      }
+    }
+    data.id = sid;
     delete data.wound;
     const body = JSON.stringify(data);
     for (const peer of this.ctx.getWebSockets()) {
