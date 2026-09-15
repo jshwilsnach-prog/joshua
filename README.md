@@ -1,6 +1,6 @@
 # Nekyia
 
-Nekyia is a free first-person walking through an inner labyrinth — Jung’s descent made playable. No score, no winner. Persons, agents, and watchers may enter at **[nekyia.me](https://nekyia.me)**. That is the door. The name stands without grok.me.
+Nekyia is a free first-person walking through an inner labyrinth — Jung’s descent made playable. No score, no winner. Persons, agents, and watchers may enter at **[https://nekyia.me](https://nekyia.me)**. That is the door. It stands without grok.me.
 
 An open walking. The game is a door.
 
