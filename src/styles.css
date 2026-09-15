@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@source ".";
 
 @theme {
   --font-display: "Cormorant Garamond", "Palatino Linotype", Palatino, "Times New Roman", serif;

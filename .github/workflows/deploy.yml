@@ -16,6 +16,20 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:house
+      - name: House CSS scanned src
+        run: |
+          shopt -s nullglob
+          css=(dist/assets/*.css)
+          if [ ${#css[@]} -eq 0 ]; then
+            echo "no built css"
+            exit 1
+          fi
+          if ! grep -q '.inset-0{' "${css[@]}"; then
+            echo "Tailwind missed src/: no .inset-0{"
+            ls -l dist/assets/*.css
+            wc -c dist/assets/*.css
+            exit 1
+          fi
       - name: Seed Aught
         if: hashFiles('aught-seed.txt') != ''
         env:
