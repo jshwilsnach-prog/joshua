@@ -1,14 +1,25 @@
 /**
  * Two living walkers, one lamp.
  * /api/walk is a relay: nothing stored, nothing logged.
+ * Rooms are keyed by thread. Empty thread is the saucer.
  * If the socket is not there, same-origin BroadcastChannel is the fallback.
  * Presence is not a who. No address, no seed, no name.
  */
 
 export type WalkMsg = Record<string, unknown>;
 
+export function walkThread(raw: unknown) {
+  const t = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 64)
+    .replace(/[^a-z0-9-]/g, "");
+  return t || "saucer";
+}
+
 type WalkHandlers = {
   id: string;
+  thread: () => string;
   pose: () => WalkMsg;
   onMessage: (data: WalkMsg) => void;
 };
@@ -24,6 +35,7 @@ export function startWalk(h: WalkHandlers) {
   let bc: BroadcastChannel | null = null;
   let usingBc = false;
   let dead = false;
+  let room = walkThread(h.thread());
 
   const deliver = (data: WalkMsg) => {
     if (dead) return;
@@ -31,20 +43,63 @@ export function startWalk(h: WalkHandlers) {
     h.onMessage(data);
   };
 
+  const closeBc = () => {
+    usingBc = false;
+    try {
+      bc?.close();
+    } catch {
+      /* ignore */
+    }
+    bc = null;
+  };
+
   const openBc = () => {
-    if (usingBc || dead) return;
+    if (dead) return;
+    closeBc();
     usingBc = true;
     try {
-      bc = new BroadcastChannel("nekyia-walk");
+      bc = new BroadcastChannel(`nekyia-walk:${room}`);
       bc.onmessage = (ev) => deliver((ev.data ?? {}) as WalkMsg);
     } catch {
       /* ignore */
     }
   };
 
+  const closeWs = () => {
+    try {
+      ws?.close();
+    } catch {
+      /* ignore */
+    }
+    ws = null;
+  };
+
+  const openWs = () => {
+    if (dead) return;
+    closeWs();
+    try {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${proto}//${location.host}/api/walk?thread=${encodeURIComponent(room)}`);
+      ws.onmessage = (ev) => {
+        try {
+          deliver(JSON.parse(String(ev.data)) as WalkMsg);
+        } catch {
+          /* ignore */
+        }
+      };
+      ws.onerror = () => openBc();
+      ws.onclose = () => {
+        if (!dead) openBc();
+      };
+    } catch {
+      openBc();
+    }
+  };
+
   const send = (msg: WalkMsg) => {
     if (dead) return;
-    const body = { ...msg, id: h.id };
+    const body = { ...msg, id: h.id, thread: room };
+    delete body.wound;
     if (ws && ws.readyState === WebSocket.OPEN) {
       try {
         ws.send(JSON.stringify(body));
@@ -62,26 +117,16 @@ export function startWalk(h: WalkHandlers) {
   };
   outbound = send;
 
-  try {
-    const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(`${proto}//${location.host}/api/walk`);
-    ws.onmessage = (ev) => {
-      try {
-        deliver(JSON.parse(String(ev.data)) as WalkMsg);
-      } catch {
-        /* ignore */
-      }
-    };
-    ws.onerror = () => openBc();
-    ws.onclose = () => {
-      if (!dead) openBc();
-    };
-  } catch {
-    openBc();
-  }
+  openWs();
 
   const tick = window.setInterval(() => {
     if (dead) return;
+    const next = walkThread(h.thread());
+    if (next !== room) {
+      room = next;
+      closeBc();
+      openWs();
+    }
     send(h.pose());
   }, 240);
 
@@ -91,16 +136,8 @@ export function startWalk(h: WalkHandlers) {
       dead = true;
       if (outbound === send) outbound = null;
       window.clearInterval(tick);
-      try {
-        ws?.close();
-      } catch {
-        /* ignore */
-      }
-      try {
-        bc?.close();
-      } catch {
-        /* ignore */
-      }
+      closeWs();
+      closeBc();
     },
   };
 }

@@ -288,6 +288,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
     };
     const walk = startWalk({
       id,
+      thread: () => useGame.getState().thread,
       pose: () => {
         const s = useGame.getState();
         applyLive();
@@ -301,7 +302,6 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
           moving: 0.45,
           idea: String(s.flags.characterIdea ?? ""),
           should: String(s.flags.shouldBe ?? ""),
-          wound: String(s.flags.wound ?? 0),
           form: String(s.flags.form ?? ""),
         };
       },

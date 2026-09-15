@@ -2,6 +2,7 @@
  * Nekyia on nekyia.me.
  * Static rooms + /api/aught (KV) + /api/walk (relay).
  * No auth. No people. Nothing on /api/walk is stored or logged.
+ * Walk rooms are keyed by thread. Empty thread is the saucer.
  */
 
 function json(data, status = 200) {
@@ -13,6 +14,15 @@ function json(data, status = 200) {
 
 function utcDay() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function walkKey(raw) {
+  const t = String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .slice(0, 64)
+    .replace(/[^a-z0-9-]/g, "");
+  return t || "saucer";
 }
 
 async function aught(request, env) {
@@ -56,15 +66,28 @@ export class WalkRoom {
     if (request.headers.get("Upgrade") !== "websocket") {
       return new Response("walk", { status: 426 });
     }
+    const key = walkKey(new URL(request.url).searchParams.get("thread"));
     const pair = new WebSocketPair();
+    pair[1].serializeAttachment({ key });
     this.ctx.acceptWebSocket(pair[1]);
     return new Response(null, { status: 101, webSocket: pair[0] });
   }
   webSocketMessage(ws, message) {
+    const room = walkKey((ws.deserializeAttachment() || {}).key);
+    let data;
+    try {
+      data = JSON.parse(typeof message === "string" ? message : new TextDecoder().decode(message));
+    } catch {
+      return;
+    }
+    if (!data || typeof data !== "object") return;
+    if (walkKey(data.thread) !== room) return;
+    delete data.wound;
+    const body = JSON.stringify(data);
     for (const peer of this.ctx.getWebSockets()) {
       if (peer !== ws) {
         try {
-          peer.send(message);
+          peer.send(body);
         } catch {
           /* ignore */
         }
@@ -80,7 +103,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/aught") return aught(request, env);
     if (url.pathname === "/api/walk") {
-      const id = env.WALK.idFromName("house");
+      const id = env.WALK.idFromName(walkKey(url.searchParams.get("thread")));
       return env.WALK.get(id).fetch(request);
     }
     if (env.ASSETS) return env.ASSETS.fetch(request);
