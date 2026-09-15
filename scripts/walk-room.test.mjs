@@ -42,6 +42,20 @@ function envSpy() {
   };
 }
 
+function roomPair() {
+  const a = new FakeWs();
+  const b = new FakeWs();
+  a.serializeAttachment({ key: "alpha", sid: "relay-a" });
+  b.serializeAttachment({ key: "alpha", sid: "relay-b" });
+  const room = new WalkRoom({
+    acceptWebSocket() {},
+    getWebSockets() {
+      return [a, b];
+    },
+  });
+  return { a, b, room };
+}
+
 describe("walk worker rooms", () => {
   it("opens two threads as two rooms, not one house", async () => {
     const { names, env } = envSpy();
@@ -106,5 +120,31 @@ describe("walk worker rooms", () => {
     const ok = JSON.parse(b.sent[0]);
     assert.equal(ok.type, "leave");
     assert.equal(ok.id, "relay-a");
+  });
+
+  it("drops a flood and does not close the socket", () => {
+    const { a, b, room } = roomPair();
+    const idea = "x".repeat(2000);
+    const n = 80;
+    for (let i = 0; i < n; i++) {
+      room.webSocketMessage(a, JSON.stringify({ thread: "alpha", idea }));
+    }
+    assert.ok(b.sent.length < n, `flood all ${b.sent.length} of ${n} got through`);
+    assert.ok(b.sent.length > 0);
+    assert.equal(a.att.sid, "relay-a");
+    room.webSocketMessage(a, JSON.stringify({ thread: "alpha", idea: "after" }));
+    assert.equal(a.att.sid, "relay-a");
+  });
+
+  it("an honest pose every 240 ms with a 500-char idea still gets through", async () => {
+    const { a, b, room } = roomPair();
+    const idea = "y".repeat(500);
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      if (i) await new Promise((r) => setTimeout(r, 240));
+      room.webSocketMessage(a, JSON.stringify({ thread: "alpha", idea }));
+    }
+    assert.equal(b.sent.length, n);
+    assert.equal(JSON.parse(b.sent.at(-1)).idea, idea);
   });
 });

@@ -5,9 +5,14 @@
  * Walk rooms are keyed by thread. Empty thread is the saucer.
  * A socket hears one room. Many sockets can still knock.
  * The relay names the socket. The client does not.
+ * Per-socket byte budget lives only in memory. No IPs. No who.
  */
 
 import { walkKey, sameRoom } from "./walk-key.js";
+
+const BURST = 32 * 1024;
+const RATE = 16 * 1024;
+const MIN_COST = 256;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -18,6 +23,17 @@ function json(data, status = 200) {
 
 function utcDay() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function messageBytes(message) {
+  if (typeof message === "string") return new TextEncoder().encode(message).byteLength;
+  if (message instanceof ArrayBuffer) return message.byteLength;
+  if (ArrayBuffer.isView(message)) return message.byteLength;
+  return 0;
+}
+
+function messageCost(message) {
+  return Math.max(messageBytes(message), MIN_COST);
 }
 
 async function aught(request, env) {
@@ -56,6 +72,21 @@ async function aught(request, env) {
 export class WalkRoom {
   constructor(state) {
     this.ctx = state;
+    this.budgets = new WeakMap();
+  }
+  takeBudget(ws, message, now = Date.now()) {
+    const cost = messageCost(message);
+    let b = this.budgets.get(ws);
+    if (!b) {
+      b = { tokens: BURST, last: now };
+      this.budgets.set(ws, b);
+    }
+    const elapsed = Math.max(0, (now - b.last) / 1000);
+    b.tokens = Math.min(BURST, b.tokens + elapsed * RATE);
+    b.last = now;
+    if (b.tokens < cost) return false;
+    b.tokens -= cost;
+    return true;
   }
   async fetch(request) {
     if (request.headers.get("Upgrade") !== "websocket") {
@@ -69,6 +100,7 @@ export class WalkRoom {
     return new Response(null, { status: 101, webSocket: pair[0] });
   }
   webSocketMessage(ws, message) {
+    if (!this.takeBudget(ws, message)) return;
     const att = ws.deserializeAttachment() || {};
     const room = walkKey(att.key);
     let data;
