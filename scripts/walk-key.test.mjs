@@ -1,18 +1,23 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { walkKey, roomAllows } from "../cloudflare/walk-key.js";
+import { walkKey, sameRoom } from "../cloudflare/walk-key.js";
 
 describe("walkKey", () => {
-  it("sends empty to the saucer", () => {
+  it("empty and missing become the saucer", () => {
     assert.equal(walkKey(""), "saucer");
     assert.equal(walkKey(null), "saucer");
+    assert.equal(walkKey(undefined), "saucer");
     assert.equal(walkKey("   "), "saucer");
   });
 
-  it("cleans a thread name", () => {
-    assert.equal(walkKey("Secret-Thread"), "secret-thread");
-    assert.equal(walkKey("House One"), "houseone");
-    assert.equal(walkKey("a/../b"), "ab");
+  it("lowercases and strips", () => {
+    assert.equal(walkKey("House"), "house");
+    assert.equal(walkKey("  Foo!  "), "foo");
+    assert.equal(walkKey("a_b c"), "abc");
+  });
+
+  it("keeps hyphen and digits", () => {
+    assert.equal(walkKey("saucer-2"), "saucer-2");
   });
 
   it("caps length", () => {
@@ -20,12 +25,19 @@ describe("walkKey", () => {
   });
 });
 
-describe("roomAllows", () => {
-  it("keeps a socket in one room", () => {
-    assert.equal(roomAllows("saucer", ""), true);
-    assert.equal(roomAllows("saucer", "saucer"), true);
-    assert.equal(roomAllows("foo", "FOO"), true);
-    assert.equal(roomAllows("saucer", "other"), false);
-    assert.equal(roomAllows("lintel", ""), false);
+describe("sameRoom", () => {
+  it("matches a room to itself", () => {
+    assert.equal(sameRoom("house", "HOUSE"), true);
+    assert.equal(sameRoom("", ""), true);
+  });
+
+  it("drops another thread", () => {
+    assert.equal(sameRoom("saucer", "house"), false);
+    assert.equal(sameRoom("alpha", "beta"), false);
+  });
+
+  it("empty message stays in the saucer, not a named room", () => {
+    assert.equal(sameRoom("house", ""), false);
+    assert.equal(sameRoom("saucer", ""), true);
   });
 });

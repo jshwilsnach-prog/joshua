@@ -1005,7 +1005,6 @@ export class NekyiaEngine {
         shielded: pose?.shielded,
         idea: pose?.idea,
         should: pose?.should,
-        wound: pose?.wound,
         form: pose?.form,
       });
       return;

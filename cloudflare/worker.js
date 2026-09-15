@@ -3,10 +3,9 @@
  * Static rooms + /api/aught (KV) + /api/walk (relay).
  * No auth. No people. Nothing on /api/walk is stored or logged.
  * Walk rooms are keyed by thread. Empty thread is the saucer.
- * A socket hears one room. Many sockets can still hear many rooms.
  */
 
-import { walkKey, roomAllows } from "./walk-key.js";
+import { walkKey, sameRoom } from "./walk-key.js";
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -75,7 +74,7 @@ export class WalkRoom {
       return;
     }
     if (!data || typeof data !== "object") return;
-    if (!roomAllows(room, data.thread)) return;
+    if (!sameRoom(room, data.thread)) return;
     delete data.wound;
     const body = JSON.stringify(data);
     for (const peer of this.ctx.getWebSockets()) {
