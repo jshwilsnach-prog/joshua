@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Ordinary visitor, GPTBot, ChatGPT-User, Twitterbot.
 # Fail if any hop or HTML still speaks grok.me.
+# A faked bot name is not an IP. A green run covers rules keyed to the name,
+# not Cloudflare rules that identify bots by address.
 set -euo pipefail
 check() {
   local label="$1"
