@@ -38,6 +38,7 @@ export function startWalk(h: WalkHandlers) {
   let wake: number | null = null;
   let lastPong = Date.now();
   let lastPing = 0;
+  let openedAt = Date.now();
 
   const deliver = (data: WalkMsg) => {
     if (dead) return;
@@ -100,12 +101,14 @@ export function startWalk(h: WalkHandlers) {
   const openWs = () => {
     if (dead) return;
     closeWs();
+    openedAt = Date.now();
     try {
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
       ws = new WebSocket(`${proto}//${location.host}/api/walk?thread=${encodeURIComponent(room)}`);
       ws.onopen = () => {
         retries = 0;
         lastPong = Date.now();
+        openedAt = Date.now();
         closeBc();
       };
       ws.onmessage = (ev) => {
@@ -158,9 +161,13 @@ export function startWalk(h: WalkHandlers) {
       closeBc();
       openWs();
     }
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.CONNECTING && Date.now() - openedAt > 10000) {
+      closeWs();
+      openBc();
+      later();
+    } else if (ws && ws.readyState === WebSocket.OPEN) {
       const now = Date.now();
-      if (now - lastPong > 8000) {
+      if (!document.hidden && now - lastPong > 15000) {
         closeWs();
         openBc();
         later();
@@ -174,7 +181,12 @@ export function startWalk(h: WalkHandlers) {
 
   const onWake = () => {
     if (dead) return;
-    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      lastPong = Date.now();
+      lastPing = 0;
+      return;
+    }
+    if (ws && ws.readyState === WebSocket.CONNECTING) return;
     retries = 0;
     if (wake != null) {
       window.clearTimeout(wake);

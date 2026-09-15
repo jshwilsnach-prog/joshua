@@ -89,4 +89,22 @@ describe("walk worker rooms", () => {
     assert.equal(ok.id, "relay-a");
     assert.equal(ok.idea, "here");
   });
+
+  it("the relay says when a socket leaves", () => {
+    const a = new FakeWs();
+    const b = new FakeWs();
+    a.serializeAttachment({ key: "alpha", sid: "relay-a" });
+    b.serializeAttachment({ key: "alpha", sid: "relay-b" });
+    const room = new WalkRoom({
+      acceptWebSocket() {},
+      getWebSockets() {
+        return [b];
+      },
+    });
+    room.webSocketClose(a);
+    assert.equal(b.sent.length, 1);
+    const ok = JSON.parse(b.sent[0]);
+    assert.equal(ok.type, "leave");
+    assert.equal(ok.id, "relay-a");
+  });
 });

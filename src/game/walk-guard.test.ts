@@ -18,8 +18,8 @@ describe("walk-guard", () => {
 
   it("GameRoot imports the guard", () => {
     const src = readFileSync(new URL("./GameRoot.tsx", import.meta.url), "utf8");
-    const m = src.match(/import \{([^}]+)\} from ["']\.\/walk-guard["']/);
-    assert.ok(m, "GameRoot must import ./walk-guard");
+    const m = src.match(/^[ \t]*import \{([^}]+)\} from ["']\.\/walk-guard["'];?[ \t]*$/m);
+    assert.ok(m, "GameRoot must import ./walk-guard on its own line, not commented");
     const names = m[1].split(",").map((s) => s.trim());
     assert.equal(names.includes("isNear"), true);
     assert.equal(names.includes("canTake"), true);

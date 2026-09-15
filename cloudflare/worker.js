@@ -109,8 +109,25 @@ export class WalkRoom {
       }
     }
   }
-  webSocketClose() {}
-  webSocketError() {}
+  webSocketClose(ws) {
+    const att = ws.deserializeAttachment() || {};
+    const sid = att.sid;
+    if (!sid) return;
+    const room = walkKey(att.key);
+    const body = JSON.stringify({ type: "leave", id: sid, thread: room });
+    for (const peer of this.ctx.getWebSockets()) {
+      if (peer !== ws) {
+        try {
+          peer.send(body);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }
+  webSocketError(ws) {
+    this.webSocketClose(ws);
+  }
 }
 
 export default {
