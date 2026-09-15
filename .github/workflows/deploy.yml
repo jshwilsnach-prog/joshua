@@ -42,23 +42,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4 deploy
       - name: Door serves this house
-        run: |
-          set -e
-          hops=$(curl -sI -L -A 'GPTBot' -H 'Cache-Control: no-cache' https://nekyia.me)
-          if echo "$hops" | grep -qiE 'joshua\.grok\.me|grok\.me/'; then
-            echo "crawler hop to grok"
-            echo "$hops"
-            exit 1
-          fi
-          html=$(curl -fsSL -A 'GPTBot' -H 'Cache-Control: no-cache' https://nekyia.me)
-          if echo "$html" | grep -qiE 'grok-project-id|grok:app_id|joshua\.grok\.me'; then
-            echo "door still has grok"
-            echo "$html"
-            exit 1
-          fi
-          echo "$html" | grep -q 'https://nekyia.me/og.jpg'
-          echo "$html" | grep -q 'nekyia.me/x-banner.jpg'
-          echo "$html" | grep -q '<title>Nekyia</title>'
-          curl -fsSL https://nekyia.me/api/aught | grep -q '"today"'
+        run: bash scripts/check-door.sh
       - name: Live relay is rooms
         run: node scripts/live-walk.mjs
