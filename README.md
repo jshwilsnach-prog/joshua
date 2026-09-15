@@ -44,3 +44,6 @@ npm test
 npm run dev
 ```
 
+## Aught
+
+The count may sit in these rooms. See [`TALLY.md`](./TALLY.md). Date and whole number only. Never a who.
