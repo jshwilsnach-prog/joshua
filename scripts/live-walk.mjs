@@ -64,10 +64,10 @@ async function once() {
     sockets.push(a1, a2, b1);
     a1.send({ id: "a1", idea: token, wound: "77" });
     await sleep(1500);
+    if (b1.heard.some((m) => m.idea === token)) throw new Error("other room heard");
     const same = a2.heard.find((m) => m.idea === token);
     if (!same) throw new Error("same room did not hear");
     if ("wound" in same) throw new Error("wound still on the wire");
-    if (b1.heard.some((m) => m.idea === token)) throw new Error("other room heard");
   } finally {
     for (const s of sockets) s.close();
   }
