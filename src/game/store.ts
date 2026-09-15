@@ -9,6 +9,8 @@ import { chime } from "./audio";
 import { asRank } from "./law";
 import { ensureWallet, sendShieldedUri } from "./wallet";
 import { openZodl } from "./zodl";
+import { walkSend } from "./walk";
+import { getTally } from "./aught";
 
 const ASPECTS: Aspect[] = ["persona", "shadow", "anima", "opposites", "self", "creator", "destroyer"];
 
@@ -186,8 +188,7 @@ export const useGame = create<GameStore>((set, get) => {
       const prop = PROPS.find((p) => p.id === id);
       const encId = prop?.symbolId ? `sym:${prop.symbolId}` : id;
       if (encId === "aught") {
-        void import("../lib/tally").then(async ({ getTally }) => {
-          const t = await getTally();
+        void getTally().then((t) => {
           const todayHits = t.days.find((d) => d.day === t.today)?.hits ?? 0;
           const flags = {
             ...get().flags,
@@ -255,9 +256,7 @@ export const useGame = create<GameStore>((set, get) => {
           set,
         );
         try {
-          const ch = new BroadcastChannel("nekyia-walk");
-          ch.postMessage({ type: "reduce", thread: get().flags.thread ?? "" });
-          ch.close();
+          walkSend({ type: "reduce", thread: get().flags.thread ?? "" });
         } catch {
           /* ignore */
         }
@@ -292,9 +291,7 @@ export const useGame = create<GameStore>((set, get) => {
           set,
         );
         try {
-          const ch = new BroadcastChannel("nekyia-walk");
-          ch.postMessage({ type: "tip", thread: get().flags.thread ?? "" });
-          ch.close();
+          walkSend({ type: "tip", thread: get().flags.thread ?? "" });
         } catch {
           /* ignore */
         }
@@ -636,9 +633,7 @@ export const useGame = create<GameStore>((set, get) => {
             set,
           );
           try {
-            const ch = new BroadcastChannel("nekyia-walk");
-            ch.postMessage({ type: "add", body: item.body, thread: get().flags.thread ?? "" });
-            ch.close();
+            walkSend({ type: "add", body: item.body, thread: get().flags.thread ?? "" });
           } catch {
             /* ignore */
           }
@@ -661,9 +656,7 @@ export const useGame = create<GameStore>((set, get) => {
             set,
           );
           try {
-            const ch = new BroadcastChannel("nekyia-walk");
-            ch.postMessage({ type: "key", hash: String(h >>> 0), thread: get().flags.thread ?? "" });
-            ch.close();
+            walkSend({ type: "key", hash: String(h >>> 0), thread: get().flags.thread ?? "" });
           } catch {
             /* ignore */
           }
@@ -915,9 +908,7 @@ function applyEffects(
         encounterId: null,
       };
       try {
-        const ch = new BroadcastChannel("nekyia-walk");
-        ch.postMessage({ type: "steal", thread: cur.flags.thread ?? "", at: Date.now() });
-        ch.close();
+        walkSend({ type: "steal", thread: cur.flags.thread ?? "", at: Date.now() });
       } catch {
         /* ignore */
       }
@@ -976,10 +967,8 @@ function applyEffects(
         encounterId: null,
       };
       try {
-        const ch = new BroadcastChannel("nekyia-walk");
-        ch.postMessage({ type: "help", thread: cur.flags.thread ?? "" });
-        ch.postMessage({ type: "spirit", thread: cur.flags.thread ?? "" });
-        ch.close();
+        walkSend({ type: "help", thread: cur.flags.thread ?? "" });
+        walkSend({ type: "spirit", thread: cur.flags.thread ?? "" });
       } catch {
         /* ignore */
       }
@@ -994,9 +983,7 @@ function applyEffects(
         encounterId: null,
       };
       try {
-        const ch = new BroadcastChannel("nekyia-walk");
-        ch.postMessage({ type: "trick", thread: cur.flags.thread ?? "" });
-        ch.close();
+        walkSend({ type: "trick", thread: cur.flags.thread ?? "" });
       } catch {
         /* ignore */
       }
@@ -1102,9 +1089,7 @@ function eliminate(get: () => GameStore, set: (p: Partial<GameStore>) => void, w
     journal: [],
   });
   try {
-    const ch = new BroadcastChannel("nekyia-walk");
-    ch.postMessage({ type: "respawn", thread: s.flags.thread ?? "" });
-    ch.close();
+    walkSend({ type: "respawn", thread: s.flags.thread ?? "" });
   } catch {
     /* ignore */
   }

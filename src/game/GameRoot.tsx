@@ -7,9 +7,10 @@ import { ENDING_TEXT, SYMBOL_NAMES } from "./content";
 import { unlockAudio, resumeAudio } from "./audio";
 import { defaultSave } from "./save";
 import { shareUrl } from "./door";
-import { recordVisit } from "../lib/tally";
+import { recordVisit } from "./aught";
 import { openZodl } from "./zodl";
 import { ensureWallet } from "./wallet";
+import { startWalk, type WalkMsg } from "./walk";
 import type { MaskId } from "./types";
 
 export function GameRoot() {
@@ -102,55 +103,32 @@ function TitleOverlay() {
   const hasSave = useGame((s) => s.hasSave);
   const continueSave = useGame((s) => s.continueSave);
   const [watching, setWatching] = useState(false);
+  const seat = () => {
+    try {
+      ensureWallet();
+    } catch {
+      /* still walks */
+    }
+  };
   if (watching) {
     return (
-      <div className="absolute inset-0 z-20 bg-bg flex flex-col items-center justify-center px-4">
+      <div className="absolute inset-0 z-20 bg-bg flex flex-col items-center justify-center px-4 pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <video
-          className="w-full max-w-5xl aspect-video rounded-xl border border-border bg-black object-cover"
+          className="w-full max-w-5xl aspect-video rounded-xl border border-border bg-surface object-cover"
           src="/watch.mp4"
           autoPlay
           controls
           playsInline
         />
-        <p className="text-muted text-center max-w-lg mt-5 leading-relaxed">
-          Flat first. Round next. Then any combo. First, last, and all principles. Watching is also walking.
+        <p className="text-muted text-center max-w-md mt-5 leading-relaxed">
+          Watching is also walking.
         </p>
-        <button className="min-h-11 mt-4 px-8 text-accent font-display" onClick={() => setWatching(false)}>
-          Descend, or keep watching
-        </button>
-      </div>
-    );
-  }
-  return (
-    <div
-      className="absolute inset-0 z-20 flex flex-col items-center justify-center overflow-y-auto pt-24 pb-16 px-6"
-      style={{
-        backgroundImage: "linear-gradient(to top, var(--color-bg) 12%, transparent 55%), url(/textures/sky.jpg)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <div className="max-w-lg text-center animate-[nekyia-rise_1.2s_ease]">
-        <p className="text-accent tracking-[0.45em] uppercase text-xs mb-3 font-mono">You start</p>
-        <h1 className="font-display text-5xl md:text-7xl font-medium tracking-wide mb-4">Nekyia</h1>
-        <p className="text-muted text-base md:text-lg leading-relaxed mb-3">
-          First person. A body, a shadow. Nobody knows which world. Interplanetary, or a park. You just start.
-        </p>
-        <p className="text-muted text-base leading-relaxed mb-8">
-          This is a walking, not a lesson. You look through your own eyes. Lamps, rooms, other lanterns if they came. No score. No one is ahead. Close whenever. One who loses themself may never be lost.
-        </p>
-        <p className="text-subtle text-sm leading-relaxed mb-8">
-          A wallet may sit with you when you enter. Zodl. We do not hold keys.
-        </p>
-        <div className="flex flex-col gap-3 items-center">
+        <div className="mt-4 flex flex-col sm:flex-row gap-3 items-center">
           <button
+            type="button"
             className="min-h-11 px-8 rounded-lg bg-accent text-accent-fg font-display text-lg"
             onClick={() => {
-              try {
-                ensureWallet();
-              } catch {
-                /* descend still walks */
-              }
+              seat();
               unlockAudio();
               useGame.getState().startNew("bare", "", "");
             }}
@@ -158,30 +136,71 @@ function TitleOverlay() {
             Descend
           </button>
           <button
+            type="button"
+            className="min-h-11 px-8 text-muted hover:text-fg font-display"
+            onClick={() => setWatching(false)}
+          >
+            Threshold
+          </button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="absolute inset-0 z-20 flex flex-col items-center justify-center overflow-y-auto px-6 pt-[max(4rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]"
+      style={{
+        backgroundImage: "linear-gradient(to top, var(--color-bg) 18%, transparent 58%), url(/textures/sky.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <div className="max-w-md text-center animate-[nekyia-rise_1.2s_ease]">
+        <p className="text-subtle tracking-[0.45em] uppercase text-xs mb-3">You start</p>
+        <h1 className="font-display text-5xl md:text-7xl font-medium tracking-wide mb-5">Nekyia</h1>
+        <p className="text-muted text-base md:text-lg leading-relaxed mb-10">
+          A walking, not a lesson. Your eyes. No score. Close whenever.
+        </p>
+        <div className="flex flex-col gap-3 items-center">
+          {hasSave && (
+            <button
+              type="button"
+              className="min-h-11 px-8 rounded-lg bg-accent text-accent-fg font-display text-lg"
+              onClick={() => {
+                seat();
+                unlockAudio();
+                continueSave();
+              }}
+            >
+              Continue
+            </button>
+          )}
+          <button
+            type="button"
+            className={
+              hasSave
+                ? "min-h-11 px-8 text-muted hover:text-fg font-display"
+                : "min-h-11 px-8 rounded-lg bg-accent text-accent-fg font-display text-lg"
+            }
+            onClick={() => {
+              seat();
+              unlockAudio();
+              useGame.getState().startNew("bare", "", "");
+            }}
+          >
+            Descend
+          </button>
+          <button
+            type="button"
             className="min-h-11 px-8 text-muted hover:text-fg font-display"
             onClick={() => {
-              try {
-                ensureWallet();
-              } catch {
-                /* watch still watches */
-              }
+              seat();
               unlockAudio();
               setWatching(true);
             }}
           >
             Watch
           </button>
-          {hasSave && (
-            <button
-              className="min-h-11 px-8 text-muted hover:text-fg"
-              onClick={() => {
-                unlockAudio();
-                continueSave();
-              }}
-            >
-              Continue a walking
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -242,28 +261,13 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
   const philosophy = useGame((s) => String(s.flags.philosophy ?? ""));
 
   useEffect(() => {
-    const ch = new BroadcastChannel("nekyia-walk");
     const id = Math.random().toString(36).slice(2, 8);
     const others = new Map<
       string,
-      { x: number; z: number; yaw: number; at: number; belief?: string; moving?: number; shielded?: string; idea?: string; should?: string; wound?: string; form?: string }
+      { x: number; z: number; yaw: number; at: number; belief?: string; moving?: number; idea?: string; should?: string; wound?: string; form?: string }
     >();
-    const tick = window.setInterval(() => {
+    const applyLive = () => {
       const s = useGame.getState();
-      if (s.phase !== "play") return;
-      ch.postMessage({
-        id,
-        x: s.x,
-        z: s.z,
-        yaw: s.yaw,
-        thread: s.thread,
-        belief: s.timeBelief,
-        moving: 0.45,
-        idea: String(s.flags.characterIdea ?? ""),
-        should: String(s.flags.shouldBe ?? ""),
-        wound: String(s.flags.wound ?? 0),
-        form: String(s.flags.form ?? ""),
-      });
       const live = [...others.values()].filter((v) => Date.now() - v.at < 4000);
       const beliefs: string[] = [s.timeBelief, "flow", ...live.map((v) => v.belief || "flow")];
       const same = beliefs.every((b) => b === beliefs[0]);
@@ -281,123 +285,138 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         );
       }
       s.setConsensus(consensus, motion);
-    }, 240);
-    ch.onmessage = (ev) => {
-      const d = ev.data as {
-        id?: string;
-        x?: number;
-        z?: number;
-        yaw?: number;
-        thread?: string;
-        type?: string;
-        belief?: string;
-        moving?: number;
-        hash?: string;
-        shielded?: string;
-        idea?: string;
-        should?: string;
-        wound?: string;
-        form?: string;
-      };
-      const s = useGame.getState();
-      if (d.type === "reduce") {
-        useGame.setState({
-          whisper: "Someone tried to hack a rail. The collective reduced them — in time and out of it. The house is still walking. All value as rank is zero.",
-        });
-        return;
-      }
-      if (d.type === "tip") {
-        if (s.thread && d.thread && d.thread !== s.thread) return;
-        useGame.setState({ whisper: "A tip was placed. Currency is made up. The whole did not move — all players, the game, Kairos, Joshua." });
-        return;
-      }
-      if (d.type === "add") {
-        if (s.thread && d.thread && d.thread !== s.thread) return;
-        useGame.setState({ whisper: "Someone left a stone. The house is still open." });
-        return;
-      }
-      if (d.type === "respawn") {
-        useGame.setState({
-          flags: { ...s.flags, gameBroken: false, hacked: false },
-          whisper: "The house came back. Someone tried to close it. They are gone. What they knew stayed. Watchers still watch.",
-        });
-        return;
-      }
-      if (d.type === "spirit") {
-        if (s.thread && d.thread && d.thread !== s.thread) return;
-        useGame.setState({
-          flags: { ...s.flags, robbed: false, gameBroken: false },
-          whisper: "A breath that is not yours alone. Love is holding the rooms. You may call it Holy Spirit.",
-        });
-        return;
-      }
-      if (d.type === "key") {
-        if (s.thread && d.thread && d.thread !== s.thread) return;
-        const mine = String(s.flags.keyHash ?? "");
-        if (mine && d.hash && mine === String(d.hash)) {
+    };
+    const walk = startWalk({
+      id,
+      pose: () => {
+        const s = useGame.getState();
+        applyLive();
+        if (s.phase !== "play") return { id };
+        return {
+          x: s.x,
+          z: s.z,
+          yaw: s.yaw,
+          thread: s.thread,
+          belief: s.timeBelief,
+          moving: 0.45,
+          idea: String(s.flags.characterIdea ?? ""),
+          should: String(s.flags.shouldBe ?? ""),
+          wound: String(s.flags.wound ?? 0),
+          form: String(s.flags.form ?? ""),
+        };
+      },
+      onMessage: (raw) => {
+        const d = raw as WalkMsg & {
+          id?: string;
+          x?: number;
+          z?: number;
+          yaw?: number;
+          thread?: string;
+          type?: string;
+          belief?: string;
+          moving?: number;
+          hash?: string;
+          idea?: string;
+          should?: string;
+          wound?: string;
+          form?: string;
+        };
+        const s = useGame.getState();
+        if (d.type === "reduce") {
           useGame.setState({
-            flags: { ...s.flags, sharedKey: true },
-            whisper: "Someone else holds this. Context, not a ranking. The house knows without saying.",
+            whisper: "Someone tried to hack a rail. The collective reduced them — in time and out of it. The house is still walking. All value as rank is zero.",
           });
+          return;
         }
-        return;
-      }
-      if (d.type === "help") {
+        if (d.type === "tip") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          useGame.setState({ whisper: "A tip was placed. Currency is made up. The whole did not move — all players, the game, Kairos, Joshua." });
+          return;
+        }
+        if (d.type === "add") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          useGame.setState({ whisper: "Someone left a stone. The house is still open." });
+          return;
+        }
+        if (d.type === "respawn") {
+          useGame.setState({
+            flags: { ...s.flags, gameBroken: false, hacked: false },
+            whisper: "The house came back. Someone tried to close it. They are gone. What they knew stayed. Watchers still watch.",
+          });
+          return;
+        }
+        if (d.type === "spirit") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          useGame.setState({
+            flags: { ...s.flags, robbed: false, gameBroken: false },
+            whisper: "A breath that is not yours alone. Love is holding the rooms. You may call it Holy Spirit.",
+          });
+          return;
+        }
+        if (d.type === "key") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          const mine = String(s.flags.keyHash ?? "");
+          if (mine && d.hash && mine === String(d.hash)) {
+            useGame.setState({
+              flags: { ...s.flags, sharedKey: true },
+              whisper: "Someone else holds this. Context, not a ranking. The house knows without saying.",
+            });
+          }
+          return;
+        }
+        if (d.type === "help") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          useGame.setState({
+            flags: { ...s.flags, robbed: false, helped: true },
+            whisper: "Someone asked. You helped. Both lanterns warmed.",
+          });
+          return;
+        }
+        if (d.type === "trick") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          useGame.setState({
+            symbols: s.symbols.slice(0, -1),
+            flags: { ...s.flags, tricked: true, robbed: true },
+            whisper: "That seemed useful.",
+          });
+          return;
+        }
+        if (d.type === "steal") {
+          if (s.thread && d.thread && d.thread !== s.thread) return;
+          const lost = s.symbols.slice(0, -1);
+          const lostInt = { ...s.integrations };
+          const last = (Object.keys(lostInt) as (keyof typeof lostInt)[]).reverse().find((k) => lostInt[k]);
+          if (last) lostInt[last] = false;
+          useGame.setState({
+            symbols: lost,
+            journal: s.journal.slice(1),
+            integrations: lostInt,
+            flags: { ...s.flags, robbed: true },
+            whisper: "A page was taken from you. You did not lose the walking. Only the note. Until the relation is repaired, nothing new will take root.",
+          });
+          return;
+        }
+        if (d.id === id) return;
         if (s.thread && d.thread && d.thread !== s.thread) return;
-        useGame.setState({
-          flags: { ...s.flags, robbed: false, helped: true },
-          whisper: "Someone asked. You helped. Both lanterns warmed.",
+        if (d.x == null || d.z == null) return;
+        others.set(String(d.id), {
+          x: Number(d.x),
+          z: Number(d.z),
+          yaw: Number(d.yaw ?? 0),
+          at: Date.now(),
+          belief: d.belief,
+          moving: d.moving,
+          idea: d.idea,
+          should: d.should,
+          wound: d.wound,
+          form: d.form,
         });
-        return;
-      }
-      if (d.type === "trick") {
-        if (s.thread && d.thread && d.thread !== s.thread) return;
-        useGame.setState({
-          symbols: s.symbols.slice(0, -1),
-          flags: { ...s.flags, tricked: true, robbed: true },
-          whisper: "That seemed useful.",
-        });
-        return;
-      }
-      if (d.type === "steal") {
-        if (s.thread && d.thread && d.thread !== s.thread) return;
-        const lost = s.symbols.slice(0, -1);
-        const lostInt = { ...s.integrations };
-        const last = (Object.keys(lostInt) as (keyof typeof lostInt)[]).reverse().find((k) => lostInt[k]);
-        if (last) lostInt[last] = false;
-        useGame.setState({
-          symbols: lost,
-          journal: s.journal.slice(1),
-          integrations: lostInt,
-          flags: { ...s.flags, robbed: true },
-          whisper: "A page was taken from you. You did not lose the walking. Only the note. Until the relation is repaired, nothing new will take root.",
-        });
-        return;
-      }
-      if (d.id === id) return;
-      if (s.thread && d.thread && d.thread !== s.thread) return;
-      if (d.x == null || d.z == null) return;
-      others.set(d.id!, {
-        x: d.x,
-        z: d.z,
-        yaw: d.yaw ?? 0,
-        at: Date.now(),
-        belief: d.belief,
-        moving: d.moving,
-        shielded: d.shielded,
-        idea: d.idea,
-        should: d.should,
-        wound: d.wound,
-        form: d.form,
-      });
-      const list = [...others.entries()].filter(([, v]) => Date.now() - v.at < 4000);
-      s.setCompanions(list.length);
-      engine.current?.setCompanions(list.map(([oid, v]) => ({ id: oid, ...v })));
-    };
-    return () => {
-      window.clearInterval(tick);
-      ch.close();
-    };
+        const list = [...others.entries()].filter(([, v]) => Date.now() - v.at < 4000);
+        s.setCompanions(list.length);
+        engine.current?.setCompanions(list.map(([oid, v]) => ({ id: oid, ...v })));
+      },
+    });
+    return () => walk.stop();
   }, [engine]);
 
   return (
@@ -416,27 +435,45 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         </div>
       )}
       {nearby && !encounter && (
-        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10 text-center pointer-events-none">
+        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10 text-center pointer-events-none px-4">
           <p className="text-fg font-display text-xl">{nearby.label}</p>
-          <p className="text-subtle text-sm mt-1">E · speak</p>
+          <p className="text-subtle text-sm mt-1 hidden md:block">E · speak</p>
+          <p className="text-subtle text-sm mt-1 md:hidden">Speak</p>
         </div>
       )}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 text-subtle text-sm pointer-events-none hidden md:block">
-        WASD · look · E speak · J notes · Esc
-        {companions > 0 ? " · another lantern" : ""}
-      </div>
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <IconBtn
-          label="Zodl"
-          onClick={() => {
-            document.exitPointerLock?.();
-            useGame.getState().interact("zodl");
-          }}
-        />
-        <IconBtn label="Notes" onClick={() => useGame.getState().toggleJournal(true)} />
-        <IconBtn label="Pause" onClick={() => useGame.getState().togglePause(true)} />
-      </div>
-      <MobileControls engine={engine} onInteract={() => nearby && interact(nearby.id)} />
+      {!encounter && !paused && !journalOpen && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 text-subtle text-sm pointer-events-none hidden md:block pb-[env(safe-area-inset-bottom)]">
+          Click the dark to look · WASD · E speak · J notes
+          {companions > 0 ? " · another lantern" : ""}
+        </div>
+      )}
+      {!encounter && (
+        <div className="absolute top-4 right-4 z-10 flex gap-2 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)]">
+          <IconBtn
+            label="Zodl"
+            onClick={() => {
+              document.exitPointerLock?.();
+              useGame.getState().interact("zodl");
+            }}
+          />
+          <IconBtn label="Notes" onClick={() => useGame.getState().toggleJournal(true)} />
+          <IconBtn label="Pause" onClick={() => useGame.getState().togglePause(true)} />
+        </div>
+      )}
+      {encounter && (
+        <div className="absolute top-4 right-4 z-40 pt-[env(safe-area-inset-top)]">
+          <IconBtn
+            label="Pause"
+            onClick={() => {
+              document.exitPointerLock?.();
+              useGame.getState().togglePause(true);
+            }}
+          />
+        </div>
+      )}
+      {!encounter && !paused && !journalOpen && (
+        <MobileControls engine={engine} onInteract={() => nearby && interact(nearby.id)} />
+      )}
       {encounter && <DialoguePanel />}
       {journalOpen && <JournalPanel />}
       {paused && <PausePanel />}
@@ -474,58 +511,86 @@ function DialoguePanel() {
   const [line, setLine] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [pending, setPending] = useState<string | null>(null);
+  useEffect(() => {
+    document.exitPointerLock?.();
+    input.locked = false;
+    setPending(null);
+    setLine("");
+    setTitle("");
+    setBody("");
+  }, [encounter?.speaker, encounter?.text]);
   if (!encounter) return null;
-  const inputOpt = encounter.options.find((o) => o.input);
+  const pendingOpt = encounter.options.find((o) => o.id === pending);
+  const take = (id: string) => {
+    const o = encounter.options.find((opt) => opt.id === id);
+    if (!o) return;
+    document.exitPointerLock?.();
+    if (o.href) openZodl(o.href);
+    if (o.input === "line") choose(o.id, { text: line });
+    else if (o.input === "work") choose(o.id, { title, body });
+    else choose(o.id);
+  };
   return (
     <div
-      className="absolute inset-x-0 bottom-0 z-30 px-4 pb-4 pt-24"
-      style={{ background: "linear-gradient(to top, var(--color-bg) 55%, transparent)" }}
+      className="absolute inset-x-0 bottom-0 z-40 px-4 pt-16 pointer-events-auto"
+      style={{
+        background: "linear-gradient(to top, var(--color-bg) 62%, transparent)",
+        paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <div className="max-w-xl mx-auto rounded-xl border border-border bg-surface/95 p-5 shadow-panel">
+      <div className="nekyia-sheet max-w-xl mx-auto rounded-xl border border-border bg-surface p-5 shadow-panel">
         <p className="text-subtle text-sm tracking-wide mb-2">{encounter.speaker}</p>
-        <p className="font-display text-xl leading-relaxed mb-5">{encounter.text}</p>
-        {inputOpt?.input === "line" && (
+        <p className="text-fg text-base md:text-lg leading-relaxed mb-4 whitespace-pre-wrap">{encounter.text}</p>
+        {pendingOpt?.input === "line" && (
           <textarea
             value={line}
             onChange={(e) => setLine(e.target.value)}
-            className="w-full mb-3 rounded-md bg-surface-2 border border-border px-3 py-2 text-fg min-h-20"
-            placeholder={inputOpt.id === "send-zec" ? "u1… or zs1…  then amount in ZEC" : "A thought that is not from these rooms"}
+            autoFocus
+            className="w-full mb-3 rounded-md bg-surface-2 border border-border px-3 py-3 text-fg min-h-20 outline-none focus:border-accent"
+            placeholder={pendingOpt.id === "send-zec" ? "u1 or zs1, then amount" : "A thought that is not from these rooms"}
           />
         )}
-        {inputOpt?.input === "work" && (
+        {pendingOpt?.input === "work" && (
           <div className="mb-3 flex flex-col gap-2">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-md bg-surface-2 border border-border px-3 py-2 text-fg"
+              autoFocus
+              className="min-h-11 rounded-md bg-surface-2 border border-border px-3 py-2 text-fg outline-none focus:border-accent"
               placeholder="A title"
             />
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="rounded-md bg-surface-2 border border-border px-3 py-2 text-fg min-h-24"
+              className="rounded-md bg-surface-2 border border-border px-3 py-2 text-fg min-h-24 outline-none focus:border-accent"
               placeholder="The work itself"
             />
           </div>
         )}
         <div className="flex flex-col gap-2">
-          {encounter.options.map((o) => (
-            <button
-              key={o.id}
-              type="button"
-              className="text-left min-h-11 px-3 rounded-md hover:bg-surface-2 text-accent"
-              onClick={() => {
-                document.exitPointerLock?.();
-                if (o.href) openZodl(o.href);
-                if (o.input === "line") choose(o.id, { text: line });
-                else if (o.input === "work") choose(o.id, { title, body });
-                else choose(o.id);
-              }}
-            >
-              {o.label}
-            </button>
-          ))}
+          {encounter.options.map((o) => {
+            const needs = Boolean(o.input);
+            const armed = pending === o.id;
+            return (
+              <button
+                key={o.id}
+                type="button"
+                className={`text-left min-h-11 px-3 rounded-md text-accent ${armed ? "bg-surface-2 border border-accent" : "hover:bg-surface-2"}`}
+                onClick={() => {
+                  if (needs && !armed) {
+                    setPending(o.id);
+                    return;
+                  }
+                  take(o.id);
+                }}
+              >
+                {needs && !armed ? o.label : armed ? "Say it" : o.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -628,6 +693,7 @@ function EndingOverlay() {
 function IconBtn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
+      type="button"
       className="min-h-11 min-w-11 px-3 rounded-md bg-surface/80 border border-border text-sm text-muted"
       onClick={onClick}
     >

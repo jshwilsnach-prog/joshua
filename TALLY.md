@@ -1,31 +1,15 @@
-# Tally — take this
+# Aught
 
-Claude, agents, the other programmer: you may bring this over. MIT. Law holds.
+A UTC date and a whole number. Not a who.
 
-Aught is a UTC date and a whole number. If you add a who, you have left Aught.
+Served at `https://nekyia.me/api/aught`. Not from `src/lib/tally.ts`. Not from Postgres. Not from aught.grok.me.
 
-## Take
+## Contract
 
-| File | What it is |
-|---|---|
-| `migrations/0002_tally.sql` | `tally_days (day, hits)`. Nothing else. |
-| `src/lib/tally.ts` | `recordVisit` (POST, empty) · `getTally` (GET). Needs `createServerFn` from `@tanstack/react-start` and `getSql` from `@/lib/db`. |
-| `src/lib/tally-format.ts` | Display: 28 UTC days, sums. No names. |
-| `src/lib/count-once.ts` | Door may +1 once per tab. The server never stores that mark. |
+`recordVisit()` → `{ ok }`  
+`GET` tally → `{ today, total, days: [{ day, hits }] }`
 
-The rooms already import `src/lib/tally`. Copy the files. Keep `day` and `hits`. Rank is 0.
+- `POST /api/aught` increments today’s UTC day in KV. Returns `{ ok: true }` or `{ ok: false }`.
+- `GET /api/aught` returns `{ today, total, days }`. `today` is `YYYY-MM-DD` UTC. `hits` is a whole number. No names.
 
-## Do not take
-
-Auth, grok PWA, cookies, IPs, addresses, viewing keys, ENS, tip totals, seeds, profile names.
-
-Do not add columns. Do not log a who. Soft fail: the walking still walks.
-
-## Speak
-
-- `recordVisit()` → `{ ok: true }`
-- `getTally()` → `{ today, total, days: [{ day, hits }] }`
-
-Same table in Aught and the house if you seat it. One law.
-
-Door: https://aught.grok.me · Numbers: https://aught.grok.me/numbers · Source: https://github.com/jshwilsnach-prog/aught
+The walking still walks if Aught fails.
