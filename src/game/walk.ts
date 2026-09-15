@@ -3,7 +3,7 @@
  * /api/walk is a relay: nothing stored, nothing logged.
  * Rooms are keyed by thread. Empty thread is the saucer.
  * A socket hears one room. Many sockets can still knock.
- * If the socket is not there, same-origin BroadcastChannel is the fallback.
+ * If the socket drops, BroadcastChannel holds the same browser until it reconnects.
  * Presence is not a who. No address, no seed, no name.
  */
 
@@ -34,6 +34,8 @@ export function startWalk(h: WalkHandlers) {
   let usingBc = false;
   let dead = false;
   let room = walkThread(h.thread());
+  let retries = 0;
+  let wake: number | null = null;
 
   const deliver = (data: WalkMsg) => {
     if (dead) return;
@@ -64,12 +66,29 @@ export function startWalk(h: WalkHandlers) {
   };
 
   const closeWs = () => {
-    try {
-      ws?.close();
-    } catch {
-      /* ignore */
+    if (ws) {
+      ws.onclose = null;
+      ws.onerror = null;
+      ws.onopen = null;
+      ws.onmessage = null;
+      try {
+        ws.close();
+      } catch {
+        /* ignore */
+      }
     }
     ws = null;
+  };
+
+  const later = () => {
+    if (dead) return;
+    const delay = Math.min(1000 * 2 ** retries, 8000);
+    retries += 1;
+    if (wake != null) window.clearTimeout(wake);
+    wake = window.setTimeout(() => {
+      wake = null;
+      openWs();
+    }, delay);
   };
 
   const openWs = () => {
@@ -78,6 +97,10 @@ export function startWalk(h: WalkHandlers) {
     try {
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
       ws = new WebSocket(`${proto}//${location.host}/api/walk?thread=${encodeURIComponent(room)}`);
+      ws.onopen = () => {
+        retries = 0;
+        closeBc();
+      };
       ws.onmessage = (ev) => {
         try {
           deliver(JSON.parse(String(ev.data)) as WalkMsg);
@@ -87,10 +110,13 @@ export function startWalk(h: WalkHandlers) {
       };
       ws.onerror = () => openBc();
       ws.onclose = () => {
-        if (!dead) openBc();
+        if (dead) return;
+        openBc();
+        later();
       };
     } catch {
       openBc();
+      later();
     }
   };
 
@@ -134,6 +160,7 @@ export function startWalk(h: WalkHandlers) {
       dead = true;
       if (outbound === send) outbound = null;
       window.clearInterval(tick);
+      if (wake != null) window.clearTimeout(wake);
       closeWs();
       closeBc();
     },

@@ -266,13 +266,18 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
       string,
       { x: number; z: number; yaw: number; at: number; belief?: string; moving?: number; idea?: string; should?: string; wound?: string; form?: string }
     >();
+    const lastHostile = new Map<string, number>();
     const applyLive = () => {
       const s = useGame.getState();
-      const live = [...others.values()].filter((v) => Date.now() - v.at < 4000);
-      const beliefs: string[] = [s.timeBelief, "flow", ...live.map((v) => v.belief || "flow")];
-      const same = beliefs.every((b) => b === beliefs[0]);
-      const consensus = (same ? beliefs[0] : "mixed") as typeof s.consensusTime;
-      const motion = live.length ? live.reduce((a, v) => a + (v.moving ?? 0.3), 0) / live.length : 0.35;
+      const now = Date.now();
+      for (const [k, v] of others) if (now - v.at >= 4000) others.delete(k);
+      const live = [...others.entries()];
+      s.setCompanions(live.length);
+      engine.current?.setCompanions(live.map(([oid, v]) => ({ id: oid, ...v })));
+      const beliefs: string[] = [s.timeBelief, ...live.map(([, v]) => v.belief).filter((b): b is string => Boolean(b))];
+      const same = beliefs.length > 0 && beliefs.every((b) => b === beliefs[0]);
+      const consensus = (same ? beliefs[0] : beliefs.length ? "mixed" : s.timeBelief) as typeof s.consensusTime;
+      const motion = live.length ? live.reduce((a, [, v]) => a + (v.moving ?? 0.3), 0) / live.length : 0.35;
       if (consensus !== s.consensusTime) {
         s.setWhisper(
           consensus === "linear"
@@ -374,6 +379,12 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "trick") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
+          const who = String(d.id ?? "");
+          const pose = who ? others.get(who) : undefined;
+          if (!pose || Date.now() - pose.at > 4000) return;
+          const prev = lastHostile.get(who) ?? 0;
+          if (Date.now() - prev < 8000) return;
+          lastHostile.set(who, Date.now());
           useGame.setState({
             symbols: s.symbols.slice(0, -1),
             flags: { ...s.flags, tricked: true, robbed: true },
@@ -383,6 +394,12 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "steal") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
+          const who = String(d.id ?? "");
+          const pose = who ? others.get(who) : undefined;
+          if (!pose || Date.now() - pose.at > 4000) return;
+          const prev = lastHostile.get(who) ?? 0;
+          if (Date.now() - prev < 8000) return;
+          lastHostile.set(who, Date.now());
           const lost = s.symbols.slice(0, -1);
           const lostInt = { ...s.integrations };
           const last = (Object.keys(lostInt) as (keyof typeof lostInt)[]).reverse().find((k) => lostInt[k]);
@@ -410,9 +427,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
           should: d.should,
           form: d.form,
         });
-        const list = [...others.entries()].filter(([, v]) => Date.now() - v.at < 4000);
-        s.setCompanions(list.length);
-        engine.current?.setCompanions(list.map(([oid, v]) => ({ id: oid, ...v })));
+        applyLive();
       },
     });
     return () => walk.stop();
