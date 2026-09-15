@@ -37,6 +37,7 @@ export function startWalk(h: WalkHandlers) {
   let retries = 0;
   let wake: number | null = null;
   let lastPong = Date.now();
+  let lastPing = 0;
 
   const deliver = (data: WalkMsg) => {
     if (dead) return;
@@ -104,6 +105,7 @@ export function startWalk(h: WalkHandlers) {
       ws = new WebSocket(`${proto}//${location.host}/api/walk?thread=${encodeURIComponent(room)}`);
       ws.onopen = () => {
         retries = 0;
+        lastPong = Date.now();
         closeBc();
       };
       ws.onmessage = (ev) => {
@@ -157,11 +159,13 @@ export function startWalk(h: WalkHandlers) {
       openWs();
     }
     if (ws && ws.readyState === WebSocket.OPEN) {
-      if (Date.now() - lastPong > 8000) {
+      const now = Date.now();
+      if (now - lastPong > 8000) {
         closeWs();
         openBc();
         later();
-      } else {
+      } else if (now - lastPing > 4000) {
+        lastPing = now;
         send({ type: "ping" });
       }
     }

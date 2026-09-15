@@ -11,6 +11,7 @@ import { recordVisit } from "./aught";
 import { openZodl } from "./zodl";
 import { ensureWallet } from "./wallet";
 import { startWalk, type WalkMsg } from "./walk";
+import { isNear, canTake, TAKE_MS } from "./walk-guard";
 import type { MaskId } from "./types";
 
 export function GameRoot() {
@@ -267,6 +268,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
       { x: number; z: number; yaw: number; at: number; belief?: string; moving?: number; idea?: string; should?: string; wound?: string; form?: string }
     >();
     let lastTaken = 0;
+    let lastRespawn = 0;
     const nearBody = (who: string, s: ReturnType<typeof useGame.getState>) => {
       const pose = who ? others.get(who) : undefined;
       if (!pose || Date.now() - pose.at > 4000) return false;
@@ -276,6 +278,12 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
       const now = Date.now();
       if (!canTake(lastTaken, now, TAKE_MS)) return false;
       lastTaken = now;
+      return true;
+    };
+    const takeRespawn = () => {
+      const now = Date.now();
+      if (!canTake(lastRespawn, now, TAKE_MS)) return false;
+      lastRespawn = now;
       return true;
     };
     const applyLive = () => {
@@ -359,7 +367,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
           return;
         }
         if (d.type === "respawn") {
-          if (!takeOnce()) return;
+          if (!takeRespawn()) return;
           useGame.setState({
             flags: { ...s.flags, gameBroken: false, hacked: false },
             whisper: "The house came back. Someone tried to close it. They are gone. What they knew stayed. Watchers still watch.",
@@ -368,7 +376,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "spirit") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
-          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
+          if (!nearBody(String(d.id ?? ""), s)) return;
           useGame.setState({
             flags: { ...s.flags, robbed: false, gameBroken: false },
             whisper: "A breath that is not yours alone. Love is holding the rooms. You may call it Holy Spirit.",
@@ -377,9 +385,10 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "key") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
-          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
+          if (!nearBody(String(d.id ?? ""), s)) return;
           const mine = String(s.flags.keyHash ?? "");
           if (mine && d.hash && mine === String(d.hash)) {
+            if (!takeOnce()) return;
             useGame.setState({
               flags: { ...s.flags, sharedKey: true },
               whisper: "Someone else holds this. Context, not a ranking. The house knows without saying.",
@@ -389,7 +398,7 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
         }
         if (d.type === "help") {
           if (s.thread && d.thread && d.thread !== s.thread) return;
-          if (!nearBody(String(d.id ?? ""), s) || !takeOnce()) return;
+          if (!nearBody(String(d.id ?? ""), s)) return;
           useGame.setState({
             flags: { ...s.flags, robbed: false, helped: true },
             whisper: "Someone asked. You helped. Both lanterns warmed.",

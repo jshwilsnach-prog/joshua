@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { isNear, canTake } from "./walk-guard.ts";
 
 describe("walk-guard", () => {
@@ -14,3 +15,8 @@ describe("walk-guard", () => {
     assert.equal(canTake(0, 8000), true);
   });
 });
+
+  it("GameRoot imports the guard", () => {
+    const src = readFileSync(new URL("./GameRoot.tsx", import.meta.url), "utf8");
+    assert.match(src, /from ["']\.\/walk-guard["']/);
+  });
