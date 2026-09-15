@@ -350,6 +350,11 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
           form?: string;
         };
         const s = useGame.getState();
+        if (d.type === "leave") {
+          others.delete(String(d.id ?? ""));
+          applyLive();
+          return;
+        }
         if (d.type === "reduce") {
           useGame.setState({
             whisper: "Someone tried to hack a rail. The collective reduced them — in time and out of it. The house is still walking. All value as rank is zero.",
