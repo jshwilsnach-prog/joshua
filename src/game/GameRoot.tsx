@@ -408,7 +408,6 @@ function PlayOverlay({ engine }: { engine: React.RefObject<NekyiaEngine | null> 
           moving: d.moving,
           idea: d.idea,
           should: d.should,
-          wound: d.wound,
           form: d.form,
         });
         const list = [...others.entries()].filter(([, v]) => Date.now() - v.at < 4000);

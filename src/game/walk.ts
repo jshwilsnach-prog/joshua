@@ -6,15 +6,12 @@
  * Presence is not a who. No address, no seed, no name.
  */
 
+import { walkKey } from "../../cloudflare/walk-key.js";
+
 export type WalkMsg = Record<string, unknown>;
 
 export function walkThread(raw: unknown) {
-  const t = String(raw ?? "")
-    .trim()
-    .toLowerCase()
-    .slice(0, 64)
-    .replace(/[^a-z0-9-]/g, "");
-  return t || "saucer";
+  return walkKey(raw);
 }
 
 type WalkHandlers = {
